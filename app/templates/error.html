@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+
+{% block title %}Error {{ error_code }}{% endblock %}
+
+{% block content %}
+<section class="py-5 text-center">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <div class="card shadow-sm border-0">
+                    <div class="card-body py-5">
+                        <h1 class="display-4 text-primary-custom">{{ error_code }}</h1>
+                        <p class="lead text-secondary-custom mb-4">{{ error_message or 'Sorry, something went wrong.' }}</p>
+                        <p class="text-muted mb-4">Please check the URL or return to the home page.</p>
+                        <a href="{{ url_for('main.index') }}" class="btn custom-btn btn-primary-custom">Back to Home</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

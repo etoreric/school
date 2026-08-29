@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% block title %}Upcoming Campus Events{% endblock %}
+
+{% block content %}
+<section class="section-padding bg-light">
+    <div class="container">
+        <div class="section-title-wrapper mb-5">
+            <span class="section-tag">Calendar</span>
+            <h1 class="display-font fw-bold m-0 text-dark">School Events</h1>
+        </div>
+        
+        <div class="row g-4">
+            {% for event in events.items %}
+                <div class="col-lg-4 col-md-6">
+                    <div class="news-card h-100 d-flex flex-column justify-content-between">
+                        <div>
+                            {% if event.image_url %}
+                                <img src="/static/uploads/{{ event.image_url }}" class="card-img-top post-card-img" alt="{{ event.title }}">
+                            {% else %}
+                                <img src="https://images.unsplash.com/photo-1511578314322-379afb476865?q=80&w=600&auto=format&fit=crop" class="card-img-top post-card-img" alt="Events placeholder">
+                            {% endif %}
+                            <div class="p-4">
+                                <div class="d-flex align-items-center gap-3 mb-3">
+                                    <div class="bg-primary-custom text-white rounded-3 p-3 text-center" style="min-width: 65px;">
+                                        <h4 class="m-0 fw-bold">{{ event.start_time.strftime('%d') }}</h4>
+                                        <small class="text-uppercase" style="font-size:0.75rem;">{{ event.start_time.strftime('%b') }}</small>
+                                    </div>
+                                    <div>
+                                        <h5 class="fw-bold m-0"><a href="{{ url_for('main.event_detail', slug=event.slug) }}" class="text-decoration-none text-dark">{{ event.title }}</a></h5>
+                                        <small class="text-muted"><i class="fa-solid fa-location-dot me-1 text-primary-custom"></i>{{ event.venue }}</small>
+                                    </div>
+                                </div>
+                                <p class="text-muted text-sm">{{ event.description[:130]|striptags }}...</p>
+                            </div>
+                        </div>
+                        
+                        <div class="px-4 pb-4">
+                            {% if event.countdown_enabled %}
+                                <div class="bg-light rounded-3 p-2 text-center mb-3">
+                                    <small class="text-muted d-block mb-1">Starts in:</small>
+                                    <span class="fw-bold text-sm text-primary-custom" data-countdown="{{ event.start_time.strftime('%Y-%m-%d %H:%M:%S') }}">Loading...</span>
+                                </div>
+                            {% endif %}
+                            <a href="{{ url_for('main.event_detail', slug=event.slug) }}" class="btn custom-btn btn-secondary-custom w-100">View Details</a>
+                        </div>
+                    </div>
+                </div>
+            {% else %}
+                <div class="col-12 text-center py-5 bg-white rounded-4 shadow-sm border border-light">
+                    <i class="fa-regular fa-calendar-times fa-3x mb-3"></i>
+                    <h5>No Events Scheduled</h5>
+                    <p class="text-muted">There are no upcoming events listed at the moment.</p>
+                </div>
+            {% endfor %}
+        </div>
+        
+        <!-- Pagination -->
+        {% if events.pages > 1 %}
+            <nav aria-label="Page navigation" class="mt-5">
+                <ul class="pagination justify-content-center gap-2">
+                    {% if events.has_prev %}
+                        <li class="page-item">
+                            <a class="page-link border-0 rounded-3 shadow-sm p-3" href="{{ url_for('main.events', page=events.prev_num) }}">&laquo;</a>
+                        </li>
+                    {% endif %}
+                    
+                    {% for page_num in events.iter_pages() %}
+                        {% if page_num %}
+                            <li class="page-item {% if page_num == events.page %}active{% endif %}">
+                                <a class="page-link border-0 rounded-3 shadow-sm p-3 {% if page_num == events.page %}bg-primary-custom text-white{% endif %}" href="{{ url_for('main.events', page=page_num) }}">{{ page_num }}</a>
+                            </li>
+                        {% endif %}
+                    {% endfor %}
+                    
+                    {% if events.has_next %}
+                        <li class="page-item">
+                            <a class="page-link border-0 rounded-3 shadow-sm p-3" href="{{ url_for('main.events', page=events.next_num) }}">&raquo;</a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </nav>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}

@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}{{ page.title }}{% endblock %}
+
+{% block content %}
+<section class="section-padding bg-light">
+    <div class="container">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{{ url_for('main.index') }}" class="text-decoration-none text-muted">Home</a></li>
+                <li class="breadcrumb-item active text-primary-custom" aria-current="page">{{ page.title }}</li>
+            </ol>
+        </nav>
+        
+        <div class="row mt-5 justify-content-center">
+            <div class="col-lg-10">
+                <div class="bg-white rounded-4 p-5 shadow-sm border border-light">
+                    <h1 class="display-font mb-4 fw-bold text-dark">{{ page.title }}</h1>
+                    <div class="meta-info border-bottom pb-3 mb-4">
+                        <span><i class="fa-regular fa-clock me-2"></i>Last Updated: {{ page.updated_at.strftime('%B %d, %Y') }}</span>
+                    </div>
+                    <div class="page-body-content leading-relaxed" style="font-size:1.1rem; line-height:1.8;">
+                        {{ page.content | safe }}
+                    </div>
+                    
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

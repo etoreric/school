@@ -1,0 +1,211 @@
+{% extends "admin/base.html" %}
+{% block title %}Appearance Layout{% endblock %}
+
+{% block admin_content %}
+<div class="mb-4">
+    <h4 class="fw-bold m-0 text-dark"><i class="fa-solid fa-wand-magic-sparkles me-2 text-primary"></i>Appearance Layout & Homepage Manager</h4>
+</div>
+
+<ul class="nav nav-tabs border-bottom mb-4" id="appearanceTab" role="tablist">
+    <li class="nav-item" role="presentation">
+        <button class="nav-link active fw-bold py-3" id="sections-tab" data-bs-toggle="tab" data-bs-target="#sections" type="button" role="tab" aria-controls="sections" aria-selected="true">
+            <i class="fa-solid fa-layer-group me-1"></i>Homepage Sections order
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link fw-bold py-3" id="testimonials-tab" data-bs-toggle="tab" data-bs-target="#testimonials" type="button" role="tab" aria-controls="testimonials" aria-selected="false">
+            <i class="fa-solid fa-star me-1"></i>Testimonials
+        </button>
+    </li>
+</ul>
+
+<div class="tab-content" id="appearanceTabContent">
+    <!-- Homepage Sections Tab -->
+    <div class="tab-pane fade show active" id="sections" role="tabpanel" aria-labelledby="sections-tab">
+        <div class="alert alert-info border-0 rounded-3 mb-4 p-3">
+            <i class="fa-solid fa-circle-info me-2 text-primary"></i>
+            Drag and drop sections to change their vertical display order on the homepage. Enabled/disable switches toggle whether they appear.
+        </div>
+        
+        <div class="row">
+            <div class="col-lg-8">
+                <div id="section-list-container">
+                    {% for sec in sections %}
+                        <div class="section-item-card" draggable="true" data-id="{{ sec.id }}">
+                            <div class="d-flex align-items-center">
+                                <span class="drag-handle"><i class="fa-solid fa-grip-vertical"></i></span>
+                                <div>
+                                    <h6 class="fw-bold text-dark mb-1">
+                                        {% if sec.name == 'stats' %}
+                                            <i class="fa-solid fa-image text-primary me-2"></i>Fixed Image Section
+                                        {% else %}
+                                            <span class="text-capitalize">{{ sec.name }} Section</span>
+                                        {% endif %}
+                                    </h6>
+                                    <small class="text-muted">{{ sec.subtitle or 'Home section display block' }}</small>
+                                </div>
+                            </div>
+                            <div class="d-flex align-items-center gap-3">
+                                {% if sec.is_enabled %}
+                                    <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-10 px-3 py-1.5 rounded-pill">Enabled</span>
+                                {% else %}
+                                    <span class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary border-opacity-10 px-3 py-1.5 rounded-pill">Disabled</span>
+                                {% endif %}
+                                
+                                <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#editSectionModal{{ sec.id }}">
+                                    <i class="fa-solid fa-pen"></i> Edit
+                                </button>
+                                <form action="{{ url_for('admin.toggle_section', id=sec.id) }}" method="POST">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <button type="submit" class="btn btn-sm btn-outline-secondary">Toggle</button>
+                                </form>
+                            </div>
+                        </div>
+
+                        <!-- Edit Section Modal -->
+                        <div class="modal fade" id="editSectionModal{{ sec.id }}" tabindex="-1" aria-hidden="true">
+                            <div class="modal-dialog">
+                                <div class="modal-content border-0 shadow">
+                                    <form action="{{ url_for('admin.edit_section', id=sec.id) }}" method="POST" {% if sec.name == 'stats' %}enctype="multipart/form-data"{% endif %}>
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                        <div class="modal-header bg-light border-0">
+                                            <h5 class="modal-title fw-bold text-capitalize">Edit {{ sec.name }} Section</h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                        </div>
+                                        <div class="modal-body p-4">
+                                            <div class="mb-3">
+                                                <label class="form-label text-muted fw-bold">Title</label>
+                                                <input type="text" name="title" class="form-control bg-light border-0" value="{{ sec.title or '' }}">
+                                            </div>
+                                            <div class="mb-3">
+                                                <label class="form-label text-muted fw-bold">Subtitle</label>
+                                                <input type="text" name="subtitle" class="form-control bg-light border-0" value="{{ sec.subtitle or '' }}">
+                                            </div>
+                                            <div class="mb-3">
+                                                <label class="form-label text-muted fw-bold">Content / Description</label>
+                                                <textarea name="content" class="form-control bg-light border-0" rows="4">{{ sec.content or '' }}</textarea>
+                                            </div>
+                                            {% if sec.name == 'stats' %}
+                                                <div class="alert alert-info border-0 bg-primary bg-opacity-10 text-primary p-3 rounded-2 mb-3">
+                                                    <i class="fa-solid fa-image me-2"></i>
+                                                    <strong>Fixed Image Section:</strong> This section displays as a full-width background image with text overlay.
+                                                </div>
+                                                <div class="mb-3">
+                                                    <label class="form-label text-muted fw-bold">
+                                                        <i class="fa-solid fa-image me-1 text-primary"></i>Background Image
+                                                    </label>
+                                                    <input type="file" name="landing_image" class="form-control bg-light border-0" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp">
+                                                    <small class="text-muted d-block mt-2">Recommended: High-resolution image (1920x600px or larger)</small>
+                                                    {% if get_setting('landing_image_url') %}
+                                                        <div class="mt-2 bg-light p-3 rounded-2 border border-primary border-opacity-25">
+                                                            <small class="d-block text-muted mb-2 fw-bold">Current Image:</small>
+                                                            <img src="{{ get_setting('landing_image_url') }}" alt="landing section preview" style="max-height: 150px; max-width: 100%; border-radius: 4px;">
+                                                        </div>
+                                                    {% endif %}
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                        <div class="modal-footer border-0 bg-light">
+                                            <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                                            <button type="submit" class="btn btn-primary">Save Section</button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Testimonials Tab -->
+    <div class="tab-pane fade" id="testimonials" role="tabpanel" aria-labelledby="testimonials-tab">
+        <div class="row g-4">
+            <!-- Add review form -->
+            <div class="col-lg-4">
+                <div class="table-card p-4">
+                    <h5 class="fw-bold mb-4">Add Testimonial Review</h5>
+                    <form action="{{ url_for('admin.new_testimonial') }}" method="POST" enctype="multipart/form-data">
+                        {{ test_form.hidden_tag() }}
+                        
+                        <div class="mb-3">
+                            <label class="form-label text-muted fw-bold">Name</label>
+                            {{ test_form.name(class="form-control p-3 bg-light border-0 rounded-3", placeholder="e.g. Sarah Smith") }}
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label text-muted fw-bold">Role / Association</label>
+                            {{ test_form.role(class="form-control p-3 bg-light border-0 rounded-3", placeholder="e.g. Parent of Grade 4 Student") }}
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label text-muted fw-bold">Rating Stars</label>
+                            {{ test_form.rating(class="form-select p-3 bg-light border-0 rounded-3") }}
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label text-muted fw-bold">Testimonial Content</label>
+                            {{ test_form.content(class="form-control p-3 bg-light border-0 rounded-3", rows="3") }}
+                        </div>
+                        
+                        <div class="mb-4">
+                            <label class="form-label text-muted fw-bold">Profile Photo</label>
+                            {{ test_form.photo(class="form-control p-3 bg-light border-0 rounded-3") }}
+                        </div>
+                        
+                        {{ test_form.submit(class="btn custom-btn btn-primary w-100 p-3") }}
+                    </form>
+                </div>
+            </div>
+            
+            <!-- List existing reviews -->
+            <div class="col-lg-8">
+                <div class="row g-3">
+                    {% for t in testimonials %}
+                        <div class="col-md-6">
+                            <div class="table-card p-4 h-100 d-flex flex-column justify-content-between">
+                                <div>
+                                    <div class="d-flex justify-content-between align-items-start mb-3">
+                                        <div class="d-flex align-items-center gap-2">
+                                            <div class="overflow-hidden rounded-circle border" style="width: 44px; height: 44px;">
+                                                {% if t.photo_path %}
+                                                    <img src="/static/uploads/{{ t.photo_path }}" class="w-100 h-100 object-fit-cover" alt="">
+                                                {% else %}
+                                                    <img src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?q=80&w=150" class="w-100 h-100 object-fit-cover" alt="">
+                                                {% endif %}
+                                            </div>
+                                            <div>
+                                                <h6 class="fw-bold m-0 text-dark text-sm">{{ t.name }}</h6>
+                                                <small class="text-muted text-xxs">{{ t.role }}</small>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="d-flex text-warning text-sm">
+                                            {% for i in range(t.rating) %}
+                                                <i class="fa-solid fa-star"></i>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                    <p class="text-secondary text-sm m-0 leading-normal italic">"{{ t.content }}"</p>
+                                </div>
+                                
+                                <div class="border-top pt-3 mt-3 d-flex justify-content-end">
+                                    <form action="{{ url_for('admin.delete_testimonial', id=t.id) }}" method="POST" onsubmit="return confirm('Remove this testimonial?');">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                        <button type="submit" class="btn btn-action btn-danger bg-opacity-10 text-danger border-0">
+                                            <i class="fa-regular fa-trash-can"></i> Delete
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    {% else %}
+                        <div class="col-12 text-center py-5 text-muted bg-white rounded-4 border border-light">No testimonials added yet.</div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}{% endblock %} | CMS Admin</title>
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    
+    <!-- favicon -->
+    <link rel="icon" href="{{ get_setting('favicon_url', '/static/favicon.ico') }}">
+
+    <!-- CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}">
+    
+    {% block extra_css %}{% endblock %}
+</head>
+<body class="admin-body">
+
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <i class="fa-solid fa-graduation-cap text-primary fa-lg"></i>
+            <span class="brand-text">School CMS</span>
+        </div>
+        
+        <ul class="nav-menu">
+            <li class="nav-menu-item {% if request.path == '/admin/dashboard' or request.path == '/admin/' %}active{% endif %}">
+                <a href="{{ url_for('admin.dashboard') }}" class="nav-menu-link">
+                    <i class="fa-solid fa-chart-line"></i>
+                    <span>Dashboard</span>
+                </a>
+            </li>
+            
+            {% if current_user.can('manage_pages') %}
+                <li class="nav-menu-item {% if '/admin/pages' in request.path %}active{% endif %}">
+                    <a href="{{ url_for('admin.list_pages') }}" class="nav-menu-link">
+                        <i class="fa-solid fa-file-invoice"></i>
+                        <span>Manage Pages</span>
+                    </a>
+                </li>
+            {% endif %}
+            
+            {% if current_user.can('manage_news') %}
+                <li class="nav-menu-item {% if '/admin/posts' in request.path or '/admin/categories' in request.path %}active{% endif %}">
+                    <a href="{{ url_for('admin.list_posts') }}" class="nav-menu-link">
+                        <i class="fa-solid fa-newspaper"></i>
+                        <span>News Articles</span>
+                    </a>
+                </li>
+            {% endif %}
+            
+            {% if current_user.can('manage_events') %}
+                <li class="nav-menu-item {% if '/admin/events' in request.path %}active{% endif %}">
+                    <a href="{{ url_for('admin.list_events') }}" class="nav-menu-link">
+                        <i class="fa-solid fa-calendar-days"></i>
+                        <span>Events Calendar</span>
+                    </a>
+                </li>
+            {% endif %}
+            
+            {% if current_user.can('manage_downloads') %}
+                <li class="nav-menu-item {% if '/admin/downloads' in request.path %}active{% endif %}">
+                    <a href="{{ url_for('admin.list_downloads') }}" class="nav-menu-link">
+                        <i class="fa-solid fa-cloud-arrow-down"></i>
+                        <span>Upload Center</span>
+                    </a>
+                </li>
+            {% endif %}
+            
+            
+            
+            {% if current_user.can('manage_messages') %}
+                <li class="nav-menu-item {% if '/admin/inbox' in request.path %}active{% endif %}">
+                    <a href="{{ url_for('admin.inbox') }}" class="nav-menu-link">
+                        <i class="fa-solid fa-envelope-open-text"></i>
+                        <span>Inbox Message</span>
+                        {% if get_unread_messages_count() > 0 %}
+                            <span class="badge bg-danger ms-auto">{{ get_unread_messages_count() }}</span>
+                        {% endif %}
+                    </a>
+                </li>
+            {% endif %}
+            
+            {% if current_user.can('manage_settings') %}
+                <li class="nav-menu-item {% if '/admin/appearance' in request.path %}active{% endif %}">
+                    <a href="{{ url_for('admin.appearance') }}" class="nav-menu-link">
+                        <i class="fa-solid fa-wand-magic-sparkles"></i>
+                        <span>Appearance Layout</span>
+                    </a>
+                </li>
+                <li class="nav-menu-item {% if '/admin/media' in request.path %}active{% endif %}">
+                    <a href="{{ url_for('admin.list_media') }}" class="nav-menu-link">
+                        <i class="fa-solid fa-photo-film"></i>
+                        <span>Media Manager</span>
+                    </a>
+                </li>
+                <li class="nav-menu-item {% if '/admin/settings' in request.path %}active{% endif %}">
+                    <a href="{{ url_for('admin.settings') }}" class="nav-menu-link">
+                        <i class="fa-solid fa-sliders"></i>
+                        <span>System Settings</span>
+                    </a>
+                </li>
+            {% endif %}
+            
+            {% if current_user.is_super_administrator %}
+                <li class="nav-menu-item {% if '/developer' in request.path %}active{% endif %}">
+                    <a href="{{ url_for('developer.dashboard') }}" class="nav-menu-link">
+                        <i class="fa-solid fa-code"></i>
+                        <span>Developer Console</span>
+                    </a>
+                </li>
+                <li class="nav-menu-item {% if '/admin/backups' in request.path %}active{% endif %}">
+                    <a href="{{ url_for('admin.backups') }}" class="nav-menu-link">
+                        <i class="fa-solid fa-database"></i>
+                        <span>Database Backups</span>
+                    </a>
+                </li>
+            {% endif %}
+            {% if current_user.can('manage_users') %}
+                <li class="nav-menu-item {% if '/admin/users' in request.path %}active{% endif %}">
+                    <a href="{{ url_for('admin.list_users') }}" class="nav-menu-link">
+                        <i class="fa-solid fa-users-gear"></i>
+                        <span>User Controls</span>
+                    </a>
+                </li>
+            {% endif %}
+            
+            <li class="border-top border-secondary my-3 opacity-25"></li>
+            
+            <li class="nav-menu-item">
+                <a href="{{ url_for('auth.change_password') }}" class="nav-menu-link">
+                    <i class="fa-solid fa-key"></i>
+                    <span>Security Settings</span>
+                </a>
+            </li>
+            <li class="nav-menu-item">
+                <a href="{{ url_for('auth.logout') }}" class="nav-menu-link text-danger">
+                    <i class="fa-solid fa-right-from-bracket"></i>
+                    <span>Logout</span>
+                </a>
+            </li>
+        </ul>
+    </aside>
+
+    <!-- Main Content Wrapper -->
+    <div class="main-wrapper">
+        <header class="admin-header">
+            <h5 class="fw-bold m-0 text-dark">
+                Welcome back, <span class="text-primary">{{ current_user.username }}</span>
+                <span class="badge bg-light text-secondary border ms-2 text-xs">{{ current_user.role.name }}</span>
+            </h5>
+            
+            <div class="d-flex align-items-center gap-4">
+                <a href="{{ url_for('main.index') }}" class="btn btn-sm btn-outline-secondary rounded-3" target="_blank">
+                    <i class="fa-solid fa-arrow-up-right-from-square me-1"></i>Visit Live Site
+                </a>
+                
+                <!-- Notifications Bell -->
+                <div class="dropdown notification-bell" id="notifBell">
+                    <div class="dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="fa-regular fa-bell fa-lg"></i>
+                        {% if get_unread_notifications_count() > 0 %}
+                            <span class="notif-badge">{{ get_unread_notifications_count() }}</span>
+                        {% endif %}
+                    </div>
+                    <ul class="dropdown-menu dropdown-menu-end border-0 shadow mt-2 p-2" style="width: 300px;">
+                        <li class="px-3 py-2 border-bottom fw-bold text-sm text-dark d-flex justify-content-between align-items-center">
+                            <span>System Notifications</span>
+                            <span class="badge bg-light text-muted border">{{ get_unread_notifications_count() }} new</span>
+                        </li>
+                        
+                        {% for n in get_unread_notifications() %}
+                            <li class="border-bottom py-2">
+                                <a class="dropdown-item d-flex gap-2 align-items-start whitespace-normal" href="#">
+                                    <div class="bg-{{ n.category or 'info' }} text-white rounded-circle p-2 d-inline-flex align-items-center justify-content-center" style="width:30px; height:30px;">
+                                        <i class="fa-solid fa-info text-xs"></i>
+                                    </div>
+                                    <div>
+                                        <h6 class="m-0 text-sm fw-bold">{{ n.title }}</h6>
+                                        <p class="m-0 text-muted text-xs leading-normal">{{ n.message }}</p>
+                                        <small class="text-muted text-xxs">{{ n.created_at.strftime('%m-%d %H:%M') }}</small>
+                                    </div>
+                                </a>
+                            </li>
+                        {% else %}
+                            <li class="text-center py-4 text-muted text-sm">No new notifications.</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        </header>
+        
+        <main class="admin-content">
+            <!-- Flash Alerts inside Dashboard -->
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }} alert-dismissible fade show border-0 shadow-sm mb-4" role="alert">
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+            
+            {% block admin_content %}{% endblock %}
+        </main>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="{{ url_for('static', filename='js/admin.js') }}"></script>
+    
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

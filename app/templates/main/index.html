@@ -1,0 +1,409 @@
+{% extends "base.html" %}
+{% block title %}Welcome to Sunny High School{% endblock %}
+
+{% block content %}
+    {# Dynamic Homepage layout rendering based on DB enabled sections #}
+    {% for section in sections %}
+        
+        {# ==========================================
+           HERO SECTION
+           ========================================== #}
+        {% if section.name == 'hero' %}
+            <section class="hero-slider-section">
+                <div class="container">
+                    <div class="row align-items-center g-5">
+                        <div class="col-lg-6">
+                            <span class="section-tag">{{ section.subtitle or "Nurturing Future Leaders" }}</span>
+                            <h1 class="hero-title">{{ section.title or "Where Excellence Meets Opportunity" }}</h1>
+                            <p class="hero-subtitle">
+                                {{ section.content or 'We provide a holistic educational environment that balances academic rigor with creative expression, character growth, and athletic skills.' }}
+                            </p>
+                            <div class="d-flex gap-3">
+                                <a href="{{ url_for('main.page', slug='about') }}" class="btn custom-btn btn-secondary-custom">Learn More</a>
+                            </div>
+                        </div>
+                        <div class="col-lg-6">
+                            <div class="hero-image-wrapper">
+                                {% set hero_img_url = get_setting('hero_image_url') or 'https://images.unsplash.com/photo-1523050854058-8df90110c9f1?q=80&w=1000&auto=format&fit=crop' %}
+                                <img src="{{ hero_img_url }}" class="img-fluid hero-image-card" alt="School life">
+                                <div class="floating-badge">
+                                    <div class="bg-primary-custom text-white rounded-circle p-3 d-inline-flex align-items-center justify-content-center" style="width:50px; height:50px;">
+                                        <i class="fa-solid fa-star"></i>
+                                    </div>
+                                    <div>
+                                        <h6 class="m-0 fw-bold">Top Ranked</h6>
+                                        <small class="text-muted">A+ Academic Rating</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            
+        {# ==========================================
+           WELCOME MESSAGE
+           ========================================== #}
+        {% elif section.name == 'welcome' %}
+            <section class="section-padding bg-white">
+                <div class="container">
+                    <div class="row align-items-center g-5">
+                        <div class="col-lg-6 order-lg-2">
+                            <span class="section-tag">{{ section.subtitle or "Welcome to our School" }}</span>
+                            <h2 class="section-title mb-4">{{ section.title or "A Warm Welcome From Our Campus" }}</h2>
+                            <p class="text-secondary-custom mb-3 fw-medium">"Instruction ends in the schoolroom, but education ends only with life."</p>
+                            <p class="text-muted leading-relaxed">
+                                {{ section.content or 'At Sunny High School, we focus on empowering young minds to reach their full potential. Through specialized learning tracks, hands-on science research labs, dynamic arts courses, and active sports programs, we help every child excel.' }}
+                            </p>
+                            <a href="{{ url_for('main.page', slug='about') }}" class="btn custom-btn btn-secondary-custom mt-3">Discover Our Vision</a>
+                        </div>
+                        <div class="col-lg-6 order-lg-1">
+                            {% set welcome_img_url = get_setting('welcome_image_url') or 'https://images.unsplash.com/photo-1427504494785-3a9ca7044f45?q=80&w=1000&auto=format&fit=crop' %}
+                            <img src="{{ welcome_img_url }}" class="img-fluid rounded-4 shadow-sm" alt="Students walking on campus">
+                        </div>
+                    </div>
+                </div>
+            </section>
+            
+        {# ==========================================
+           PRINCIPAL MESSAGE
+           ========================================== #}
+        {% elif section.name == 'principal' %}
+            <section class="section-padding" style="background: rgba(37, 99, 235, 0.02);">
+                <div class="container">
+                    <div class="row align-items-center g-5">
+                        <div class="col-lg-5">
+                            {% set principal_img_url = get_setting('principal_image_url') or 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=1000&auto=format&fit=crop' %}
+                            <img src="{{ principal_img_url }}" class="img-fluid rounded-4 shadow-sm border border-white" style="border-width: 8px !important;" alt="Principal Profile">
+                        </div>
+                        <div class="col-lg-7">
+                            <span class="section-tag">{{ section.subtitle or "Leadership Note" }}</span>
+                            <h2 class="section-title mb-4">{{ section.title or "Principal's Message to the Community" }}</h2>
+                            <div class="text-muted leading-relaxed" style="white-space: pre-wrap;">{{ section.content or 'Dear Students, Parents, and Friends,\n\nAs the Principal of Sunny High School, it is my privilege to welcome you to our community portal. We strive to create a warm atmosphere where education goes beyond reading textbooks to solving real-life challenges.\n\nWe encourage our students to think critically, communicate articulately, and lead with empathy. Together with our faculty, we look forward to guide another year of discovery and transformation.' }}</div>
+                            <h5 class="fw-bold mt-4 mb-1">Dr. Eleanor Vance</h5>
+                            <small class="text-primary-custom fw-semibold">Principal, Sunny High School</small>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            
+        {# ==========================================
+           FIXED IMAGE LANDING SECTION
+           ========================================== #}
+        {% elif section.name == 'stats' %}
+            {% set landing_img_url = get_setting('landing_image_url') or get_setting('hero_image_url') or 'https://images.unsplash.com/photo-1523050854058-8df90110c9f1?q=80&w=1800&auto=format&fit=crop' %}
+            <section class="image-landing-section" style="background-image: url('{{ landing_img_url }}');">
+                <div class="image-landing-overlay">
+                    <div class="container">
+                        <div class="image-landing-content">
+                            <span class="section-tag">{{ section.subtitle or 'Sunny High School' }}</span>
+                            <h2 class="display-font">{{ section.title or 'A place to learn, grow, and belong.' }}</h2>
+                            <p>{{ section.content or 'Discover a welcoming campus built around curiosity, character, and opportunity.' }}</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            
+        {# ==========================================
+           LATEST NEWS
+           ========================================== #}
+        {% elif section.name == 'news' %}
+            <section class="section-padding bg-white">
+                <div class="container">
+                    <div class="section-title-wrapper d-flex justify-content-between align-items-end">
+                        <div>
+                            <span class="section-tag">{{ section.subtitle or "Stay Updated" }}</span>
+                            <h2 class="section-title m-0">{{ section.title or "School News & Announcements" }}</h2>
+                        </div>
+                        <a href="{{ url_for('main.news') }}" class="btn custom-btn btn-secondary-custom">View All News</a>
+                    </div>
+                    
+                    <div class="row g-4">
+                        {% for post in latest_news %}
+                            <div class="col-lg-4 col-md-6">
+                                <div class="news-card h-100 d-flex flex-column">
+                                    {% if post.featured_image %}
+                                        <img src="/static/uploads/{{ post.featured_image }}" class="card-img-top post-card-img" alt="{{ post.title }}">
+                                    {% else %}
+                                        <img src="https://images.unsplash.com/photo-1506784983877-45594efa4cbe?q=80&w=600&auto=format&fit=crop" class="card-img-top post-card-img" alt="Placeholder image">
+                                    {% endif %}
+                                    <div class="p-4 flex-grow-1 d-flex flex-column justify-content-between">
+                                        <div>
+                                            <div class="meta-info">
+                                                <span><i class="fa-regular fa-calendar me-2"></i>{{ post.published_at.strftime('%b %d, %Y') }}</span>
+                                                {% if post.category %}
+                                                    <span class="text-primary-custom fw-semibold"><i class="fa-solid fa-tag me-2"></i>{{ post.category.name }}</span>
+                                                {% endif %}
+                                            </div>
+                                            <h5 class="fw-bold mb-3"><a href="{{ url_for('main.news_detail', slug=post.slug) }}" class="text-decoration-none text-dark">{{ post.title }}</a></h5>
+                                            <p class="text-muted text-sm">{{ post.excerpt or post.content[:120]|striptags }}...</p>
+                                        </div>
+                                        <a href="{{ url_for('main.news_detail', slug=post.slug) }}" class="text-primary-custom text-decoration-none fw-bold d-inline-flex align-items-center gap-1 mt-3">Read Article <i class="fa-solid fa-arrow-right"></i></a>
+                                    </div>
+                                </div>
+                            </div>
+                        {% else %}
+                            <div class="col-12 text-center text-muted py-5">
+                                <i class="fa-regular fa-folder-open fa-3x mb-3 text-secondary"></i>
+                                <p>No news articles published yet. Check back soon!</p>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </section>
+            
+        {# ==========================================
+           UPCOMING EVENTS
+           ========================================== #}
+        {% elif section.name == 'events' %}
+            <section class="section-padding">
+                <div class="container">
+                    <div class="section-title-wrapper d-flex justify-content-between align-items-end">
+                        <div>
+                            <span class="section-tag">{{ section.subtitle or "School Calendar" }}</span>
+                            <h2 class="section-title m-0">{{ section.title or "Upcoming Campus Events" }}</h2>
+                        </div>
+                        <a href="{{ url_for('main.events') }}" class="btn custom-btn btn-secondary-custom">View Events Calendar</a>
+                    </div>
+                    
+                    <div class="row g-4">
+                        {% for event in upcoming_events %}
+                            <div class="col-lg-4 col-md-6">
+                                <div class="premium-card h-100 d-flex flex-column justify-content-between">
+                                    <div>
+                                        <div class="d-flex align-items-center gap-3 mb-3">
+                                            <div class="bg-primary-custom text-white rounded-3 p-3 text-center" style="min-width: 65px;">
+                                                <h4 class="m-0 fw-bold">{{ event.start_time.strftime('%d') }}</h4>
+                                                <small class="text-uppercase" style="font-size:0.75rem;">{{ event.start_time.strftime('%b') }}</small>
+                                            </div>
+                                            <div>
+                                                <h5 class="fw-bold m-0"><a href="{{ url_for('main.event_detail', slug=event.slug) }}" class="text-decoration-none text-dark">{{ event.title }}</a></h5>
+                                                <small class="text-muted"><i class="fa-solid fa-location-dot me-1"></i>{{ event.venue }}</small>
+                                            </div>
+                                        </div>
+                                        <p class="text-muted text-sm">{{ event.description[:120]|striptags }}...</p>
+                                    </div>
+                                    
+                                    {% if event.countdown_enabled %}
+                                        <div class="bg-light rounded-3 p-2 mt-3 text-center">
+                                            <small class="text-muted d-block mb-1">Starts in:</small>
+                                            <span class="fw-bold text-sm text-primary-custom" data-countdown="{{ event.start_time.strftime('%Y-%m-%d %H:%M:%S') }}">Loading...</span>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        {% else %}
+                            <div class="col-12 text-center text-muted py-5">
+                                <i class="fa-regular fa-calendar-times fa-3x mb-3 text-secondary"></i>
+                                <p>No upcoming events currently scheduled.</p>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </section>
+            
+        {# ==========================================
+           GALLERY PREVIEW
+           ========================================== #}
+        {% elif section.name == 'gallery' %}
+            <section class="section-padding bg-white">
+                <div class="container">
+                    <div class="section-title-wrapper d-flex justify-content-between align-items-end">
+                        <div>
+                            <span class="section-tag">{{ section.subtitle or "Visual Tour" }}</span>
+                            <h2 class="section-title m-0">{{ section.title or "Campus Gallery & Media" }}</h2>
+                        </div>
+                        <a href="{{ url_for('main.gallery') }}" class="btn custom-btn btn-secondary-custom">View All Albums</a>
+                    </div>
+                    
+                    <div class="row g-3">
+                        {% for img in gallery_preview %}
+                            <div class="col-lg-3 col-md-4 col-sm-6">
+                                <div class="position-relative overflow-hidden rounded-4 shadow-sm" style="height: 220px; group">
+                                    <img src="/static/uploads/{{ img.media_path }}" class="img-fluid w-100 h-100 object-fit-cover transition-transform" style="transition: transform 0.5s ease;" alt="Gallery picture">
+                                    <a href="/static/uploads/{{ img.media_path }}" class="gallery-thumb position-absolute top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center bg-dark bg-opacity-70 opacity-0 transition-opacity text-white text-decoration-none" data-caption="{{ img.caption }}" style="transition: opacity 0.3s ease;">
+                                        <i class="fa-solid fa-magnifying-glass-plus fa-2x"></i>
+                                    </a>
+                                </div>
+                            </div>
+                        {% else %}
+                            <div class="col-12 text-center text-muted py-5">
+                                <i class="fa-regular fa-images fa-3x mb-3 text-secondary"></i>
+                                <p>No photos uploaded to the gallery yet.</p>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </section>
+
+        {# ==========================================
+           VIDEO GALLERY
+           ========================================== #}
+        {% elif section.name == 'videos' %}
+            <section id="videos" class="section-padding bg-light">
+                <div class="container">
+                    <div class="section-title-wrapper text-center">
+                        <span class="section-tag">{{ section.subtitle or "Watch & Learn" }}</span>
+                        <h2 class="section-title">{{ section.title or "Video Gallery" }}</h2>
+                    </div>
+                    
+                    <div class="row g-3">
+                        {% for vid in videos_preview %}
+                            <div class="col-lg-4 col-md-6 col-sm-12">
+                                <div class="position-relative overflow-hidden rounded-4 shadow-sm" style="height: 220px; group">
+                                    <video src="/static/uploads/{{ vid.media_path }}" class="img-fluid w-100 h-100 object-fit-cover transition-transform" style="transition: transform 0.5s ease;" muted loop autoplay playsinline controls></video>
+                                    <a href="/static/uploads/{{ vid.media_path }}" class="gallery-thumb position-absolute top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center bg-dark bg-opacity-70 opacity-0 transition-opacity text-white text-decoration-none" data-caption="{{ vid.caption }}" style="transition: opacity 0.3s ease;">
+                                        <i class="fa-solid fa-play fa-2x"></i>
+                                    </a>
+                                </div>
+                            </div>
+                        {% else %}
+                            <div class="col-12 text-center text-muted py-5">
+                                <i class="fa-solid fa-film fa-3x mb-3 text-secondary"></i>
+                                <p>No videos uploaded to the gallery yet.</p>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </section>
+            
+        {# ==========================================
+           TESTIMONIALS
+           ========================================== #}
+        {% elif section.name == 'testimonials' %}
+            <section class="section-padding bg-light">
+                <div class="container">
+                    <div class="section-title-wrapper text-center">
+                        <span class="section-tag">{{ section.subtitle or "Endorsements" }}</span>
+                        <h2 class="section-title">{{ section.title or "What Parents & Students Say" }}</h2>
+                    </div>
+                    
+                    <div class="row g-4 justify-content-center">
+                        {% for testi in testimonials %}
+                            <div class="col-lg-4 col-md-6">
+                                <div class="testimonial-card h-100 d-flex flex-column justify-content-between">
+                                    <i class="fa-solid fa-quote-right quote-icon"></i>
+                                    <div>
+                                        <div class="d-flex text-warning mb-3">
+                                            {% for i in range(testi.rating) %}
+                                                <i class="fa-solid fa-star"></i>
+                                            {% endfor %}
+                                        </div>
+                                        <p class="testimonial-text">"{{ testi.content }}"</p>
+                                    </div>
+                                    <div class="avatar-wrapper">
+                                        {% if testi.photo_path %}
+                                            <img src="/static/uploads/{{ testi.photo_path }}" class="avatar" alt="{{ testi.name }}">
+                                        {% else %}
+                                            <img src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?q=80&w=150&auto=format&fit=crop" class="avatar" alt="Avatar placeholder">
+                                        {% endif %}
+                                        <div>
+                                            <h6 class="avatar-name">{{ testi.name }}</h6>
+                                            <small class="avatar-role">{{ testi.role }}</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        {% else %}
+                            <div class="col-12 text-center text-muted py-5">
+                                <i class="fa-regular fa-comment-dots fa-3x mb-3 text-secondary"></i>
+                                <p>No testimonials posted yet.</p>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </section>
+            
+        {# ==========================================
+           CONTACT & FORM
+           ========================================== #}
+        {% elif section.name == 'contact' %}
+            <section class="section-padding bg-white">
+                <div class="container">
+                    <div class="row g-5">
+                        <div class="col-lg-6">
+                            <span class="section-tag">{{ section.subtitle or "Get In Touch" }}</span>
+                            <h2 class="section-title mb-4">{{ section.title or "Have Questions? Contact Us" }}</h2>
+                            <p class="text-muted mb-5">
+                                We are always ready to answer your inquiries. Reach out via email, phone, or stop by our campus office during business hours.
+                            </p>
+                            
+                            <div class="d-flex align-items-start gap-3 mb-4">
+                                <div class="bg-primary-custom text-white rounded-3 p-3 d-flex align-items-center justify-content-center" style="width: 50px; height: 50px;">
+                                    <i class="fa-solid fa-phone"></i>
+                                </div>
+                                <div>
+                                    <h6 class="fw-bold mb-1">Call Us</h6>
+                                    <p class="text-muted m-0">{{ get_setting('contact_phone', '+1 (555) 789-0123') }}</p>
+                                </div>
+                            </div>
+                            
+                            <div class="d-flex align-items-start gap-3 mb-4">
+                                <div class="bg-primary-custom text-white rounded-3 p-3 d-flex align-items-center justify-content-center" style="width: 50px; height: 50px;">
+                                    <i class="fa-solid fa-envelope"></i>
+                                </div>
+                                <div>
+                                    <h6 class="fw-bold mb-1">Email Us</h6>
+                                    <p class="text-muted m-0">{{ get_setting('contact_email', 'info@sunnyhigh.edu') }}</p>
+                                </div>
+                            </div>
+                            
+                            <div class="d-flex align-items-start gap-3">
+                                <div class="bg-primary-custom text-white rounded-3 p-3 d-flex align-items-center justify-content-center" style="width: 50px; height: 50px;">
+                                    <i class="fa-solid fa-location-dot"></i>
+                                </div>
+                                <div>
+                                    <h6 class="fw-bold mb-1">Visit Campus</h6>
+                                    <p class="text-muted m-0">{{ get_setting('contact_address', '742 Evergreen Terrace, Springfield') }}</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-lg-6">
+                            <div class="p-4 p-md-5 rounded-4 shadow-sm border border-light bg-light">
+                                <h4 class="fw-bold mb-4">Send a Message</h4>
+                                <form action="{{ url_for('main.contact') }}" method="POST">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <div class="row g-3">
+                                        <div class="col-md-6">
+                                            <label class="form-label text-muted">Full Name</label>
+                                            <input type="text" name="name" class="form-control rounded-3 border-0 bg-white p-3" required>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label text-muted">Email Address</label>
+                                            <input type="email" name="email" class="form-control rounded-3 border-0 bg-white p-3" required>
+                                        </div>
+                                        <div class="col-12">
+                                            <label class="form-label text-muted">Subject</label>
+                                            <input type="text" name="subject" class="form-control rounded-3 border-0 bg-white p-3" required>
+                                        </div>
+                                        <div class="col-12">
+                                            <label class="form-label text-muted">Your Message</label>
+                                            <textarea name="message_content" rows="4" class="form-control rounded-3 border-0 bg-white p-3" required></textarea>
+                                        </div>
+                                        <div class="col-12 mt-4">
+                                            <button type="submit" class="btn custom-btn btn-primary-custom w-100 p-3">Send Message</button>
+                                        </div>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            
+        {# ==========================================
+           GOOGLE MAPS EMBED
+           ========================================== #}
+        {% elif section.name == 'map' %}
+            {% if get_setting('google_maps_url') %}
+                <section class="map-container-section bg-light">
+                    <div class="map-container">
+                        <iframe src="{{ get_setting('google_maps_url') }}" allowfullscreen="" loading="lazy"></iframe>
+                    </div>
+                </section>
+            {% endif %}
+            
+        {% endif %}
+        
+    {% endfor %}
+{% endblock %}

@@ -1,0 +1,93 @@
+{% extends "admin/base.html" %}
+{% block title %}Configure Categories{% endblock %}
+
+{% block admin_content %}
+<div class="mb-4">
+    <h4 class="fw-bold m-0 text-dark"><i class="fa-solid fa-tags me-2 text-primary"></i>News Categories</h4>
+</div>
+
+<div class="row g-4">
+    <!-- Category addition form -->
+    <div class="col-lg-4">
+        <div class="table-card p-4">
+            <h5 class="fw-bold mb-4">Add New Category</h5>
+            <form action="{{ url_for('admin.list_categories') }}" method="POST">
+                {{ form.hidden_tag() }}
+                
+                <div class="mb-3">
+                    <label class="form-label text-muted">Category Name</label>
+                    {{ form.name(class="form-control p-3 bg-light border-0 rounded-3", placeholder="e.g. Campus Life", id="cat-name") }}
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label text-muted">Slug</label>
+                    {{ form.slug(class="form-control p-3 bg-light border-0 rounded-3", placeholder="e.g. campus-life", id="cat-slug") }}
+                </div>
+                
+                <div class="mb-4">
+                    <label class="form-label text-muted">Description (Optional)</label>
+                    {{ form.description(class="form-control p-3 bg-light border-0 rounded-3", placeholder="Brief description") }}
+                </div>
+                
+                {{ form.submit(class="btn custom-btn btn-primary w-100 p-3") }}
+            </form>
+        </div>
+    </div>
+    
+    <!-- Category list -->
+    <div class="col-lg-8">
+        <div class="table-card">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="bg-light">
+                        <tr>
+                            <th scope="col" class="py-3 px-4 border-0 text-secondary fw-semibold">Name</th>
+                            <th scope="col" class="py-3 border-0 text-secondary fw-semibold">Slug</th>
+                            <th scope="col" class="py-3 border-0 text-secondary fw-semibold">Posts Count</th>
+                            <th scope="col" class="py-3 border-0 text-secondary fw-semibold text-end px-4">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for cat in categories %}
+                            <tr>
+                                <td class="py-3 px-4 fw-semibold text-dark">{{ cat.name }}</td>
+                                <td><code>/news?category={{ cat.slug }}</code></td>
+                                <td><span class="badge bg-light text-secondary border px-3 py-1.5 rounded-pill">{{ cat.posts | length }} posts</span></td>
+                                <td class="text-end px-4">
+                                    <form action="{{ url_for('admin.delete_category', id=cat.id) }}" method="POST" onsubmit="return confirm('Delete this category? Associated posts will not be deleted but set to uncategorized.');">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                        <button type="submit" class="btn btn-action btn-danger bg-opacity-10 text-danger border-0">
+                                            <i class="fa-regular fa-trash-can"></i> Delete
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                        {% else %}
+                            <tr>
+                                <td colspan="4" class="text-center py-5 text-muted">No categories created yet.</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    const nameInput = document.getElementById('cat-name');
+    const slugInput = document.getElementById('cat-slug');
+    if (nameInput && slugInput) {
+        nameInput.addEventListener('keyup', () => {
+            const slug = nameInput.value
+                .toLowerCase()
+                .replace(/[^a-z0-9\s-]/g, '')
+                .replace(/\s+/g, '-')
+                .replace(/-+/g, '-');
+            slugInput.value = slug;
+        });
+    }
+</script>
+{% endblock %}

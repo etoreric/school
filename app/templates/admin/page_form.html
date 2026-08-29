@@ -1,0 +1,93 @@
+{% extends "admin/base.html" %}
+{% block title %}{{ title }}{% endblock %}
+
+{% block admin_content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h4 class="fw-bold m-0 text-dark"><i class="fa-solid fa-file-invoice me-2 text-primary"></i>{{ title }}</h4>
+    <a href="{{ url_for('admin.list_pages') }}" class="btn btn-secondary rounded-3 py-2 px-3">
+        Cancel & Go Back
+    </a>
+</div>
+
+<div class="row">
+    <div class="col-lg-9">
+        <div class="table-card p-5">
+            <form action="" method="POST">
+                {{ form.hidden_tag() }}
+                
+                <div class="row g-4">
+                    <div class="col-md-6">
+                        <label class="form-label text-muted fw-bold">Page Title</label>
+                        {{ form.title(class="form-control p-3 bg-light border-0 rounded-3", placeholder="e.g. Science Fair details", id="page-title") }}
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <label class="form-label text-muted fw-bold">URL Slug</label>
+                        {{ form.slug(class="form-control p-3 bg-light border-0 rounded-3", placeholder="e.g. science-fair", id="page-slug") }}
+                        <small class="text-muted mt-1 d-block">This defines the link: <code>/page/your-slug</code></small>
+                    </div>
+                    
+                    <div class="col-12">
+                        <label class="form-label text-muted fw-bold">Page Content (Rich Text Editor)</label>
+                        {{ form.content(class="form-control rounded-3", rows="15") }}
+                    </div>
+                    
+                    <div class="col-12 border-top pt-4 mt-4">
+                        <h6 class="fw-bold mb-3 text-secondary">SEO Configurations (Optional)</h6>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <label class="form-label text-muted">SEO Title</label>
+                        {{ form.seo_title(class="form-control p-3 bg-light border-0 rounded-3", placeholder="Custom metadata title") }}
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <label class="form-label text-muted">SEO Description</label>
+                        {{ form.seo_description(class="form-control p-3 bg-light border-0 rounded-3", placeholder="Short search snippets description") }}
+                    </div>
+                    
+                    <div class="col-12 border-top pt-4">
+                        <div class="form-check form-switch p-0 d-flex align-items-center gap-3">
+                            {{ form.is_published(class="form-check-input m-0", type="checkbox", style="width: 50px; height: 24px;") }}
+                            <label class="form-check-label fw-bold text-dark" for="is_published">Publish Immediately (Visible to visitors)</label>
+                        </div>
+                    </div>
+                    
+                    <div class="col-12 mt-5">
+                        {{ form.submit(class="btn custom-btn btn-primary w-100 p-3 fs-5") }}
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- TinyMCE Rich Text Editor CDN -->
+<script src="https://cdn.jsdelivr.net/npm/tinymce@6.8.2/tinymce.min.js" referrerpolicy="origin"></script>
+<script>
+    tinymce.init({
+        selector: '#content',
+        height: 500,
+        plugins: 'anchor autolink charmap codesample emoticons image link lists media searchreplace table visualblocks wordcount',
+        toolbar: 'undo redo | blocks fontfamily fontsize | bold italic underline strikethrough | link image media table | align lineheight | numlist bullist indent outdent | emoticons charmap | removeformat',
+        content_style: 'body { font-family:Inter,sans-serif; font-size:16px }'
+    });
+
+    // Auto-generate Slug helper
+    const titleInput = document.getElementById('page-title');
+    const slugInput = document.getElementById('page-slug');
+    
+    if (titleInput && slugInput && !slugInput.value) {
+        titleInput.addEventListener('keyup', () => {
+            const slug = titleInput.value
+                .toLowerCase()
+                .replace(/[^a-z0-9\s-]/g, '')
+                .replace(/\s+/g, '-')
+                .replace(/-+/g, '-');
+            slugInput.value = slug;
+        });
+    }
+</script>
+{% endblock %}

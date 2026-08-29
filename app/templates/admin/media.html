@@ -1,0 +1,120 @@
+{% extends "admin/base.html" %}
+{% block title %}Media Manager{% endblock %}
+
+{% block admin_content %}
+<div class="mb-4">
+    <h4 class="fw-bold m-0 text-dark"><i class="fa-solid fa-photo-film me-2 text-primary"></i>Media File Manager</h4>
+</div>
+
+<!-- Drag & Drop Upload Zone -->
+<div class="table-card p-5 mb-4">
+    <div id="dropzone" class="border-2 border-dashed rounded-4 p-5 text-center" style="border: 2.5px dashed #cbd5e1; cursor: pointer; transition: all 0.3s ease;">
+        <i class="fa-solid fa-cloud-arrow-up fa-3x mb-3 d-block"></i>
+        <h5 class="fw-bold text-muted mb-2">Drag & Drop Files Here</h5>
+        <p class="text-muted text-sm m-0">or click to browse from your computer</p>
+    </div>
+    <input type="file" id="file-upload-input" name="file" class="d-none" accept="image/*,video/*,audio/*,application/pdf,application/zip">
+</div>
+
+<!-- Files listing grid -->
+{% macro render_files(files_subset, empty_msg="No files found") %}
+<div class="row g-3">
+    {% for file in files_subset %}
+        <div class="col-xl-2 col-lg-3 col-md-4 col-sm-6">
+            <div class="table-card p-3 text-center">
+                <!-- Image preview or icon for non-image -->
+                {% if file.name.endswith(('.jpg', '.jpeg', '.png', '.gif', '.webp')) %}
+                    <div class="overflow-hidden rounded-3 mb-2" style="height: 110px;">
+                        <img src="{{ file.url }}" class="w-100 h-100 object-fit-cover" alt="{{ file.name }}">
+                    </div>
+                {% elif file.name.endswith(('.mp4', '.mov', '.avi', '.webm')) %}
+                    <div class="overflow-hidden rounded-3 mb-2" style="height: 110px;">
+                        <video src="{{ file.url }}" class="w-100 h-100 object-fit-cover" muted playsinline controls></video>
+                    </div>
+                {% elif 'pdf' in file.name.lower() %}
+                    <div class="d-flex align-items-center justify-content-center bg-light rounded-3 mb-2" style="height: 110px;">
+                        <i class="fa-regular fa-file-pdf fa-3x text-danger"></i>
+                    </div>
+                {% elif file.name.endswith(('.doc', '.docx')) %}
+                    <div class="d-flex align-items-center justify-content-center bg-light rounded-3 mb-2" style="height: 110px;">
+                        <i class="fa-regular fa-file-word fa-3x text-primary"></i>
+                    </div>
+                {% elif file.name.endswith(('.zip', '.rar')) %}
+                    <div class="d-flex align-items-center justify-content-center bg-light rounded-3 mb-2" style="height: 110px;">
+                        <i class="fa-regular fa-file-zipper fa-3x text-warning"></i>
+                    </div>
+                {% elif file.name.endswith(('.mp3', '.wav', '.ogg', '.m4a', '.aac')) %}
+                    <div class="d-flex align-items-center justify-content-center bg-light rounded-3 mb-2" style="height: 110px;">
+                        <i class="fa-solid fa-file-audio fa-3x text-secondary"></i>
+                    </div>
+                {% else %}
+                    <div class="d-flex align-items-center justify-content-center bg-light rounded-3 mb-2" style="height: 110px;">
+                        <i class="fa-regular fa-file fa-3x text-secondary"></i>
+                    </div>
+                {% endif %}
+                
+                <p class="text-muted text-truncate mb-1" style="font-size: 0.7rem;" title="{{ file.name }}">{{ file.name }}</p>
+                <p class="text-muted mb-2" style="font-size: 0.65rem;">{{ file.size }}</p>
+                
+                <div class="d-flex gap-2 justify-content-center">
+                    <a href="{{ file.url }}" class="btn btn-sm btn-light border px-2 py-1" target="_blank">
+                        <i class="fa-regular fa-eye" style="font-size: 0.75rem;"></i>
+                    </a>
+                    <form action="{{ url_for('admin.delete_media_file') }}" method="POST" onsubmit="return confirm('Permanently delete this file?');">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <input type="hidden" name="filename" value="{{ file.name }}">
+                        <button type="submit" class="btn btn-sm btn-danger bg-opacity-10 text-danger border-0 px-2 py-1">
+                            <i class="fa-regular fa-trash-can" style="font-size: 0.75rem;"></i>
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    {% else %}
+        <div class="col-12 text-center py-5 bg-white rounded-4 shadow-sm border border-light">
+            <i class="fa-regular fa-folder-open fa-3x mb-3"></i>
+            <h5>{{ empty_msg }}</h5>
+            <p class="text-muted">Use the upload zone above to add files.</p>
+        </div>
+    {% endfor %}
+</div>
+{% endmacro %}
+
+<!-- Nav tabs -->
+<ul class="nav nav-pills mb-4 gap-2" id="media-tabs" role="tablist">
+  <li class="nav-item" role="presentation">
+    <button class="nav-link active rounded-pill" id="all-tab" data-bs-toggle="pill" data-bs-target="#all-media" type="button" role="tab" aria-selected="true">All Media</button>
+  </li>
+  <li class="nav-item" role="presentation">
+    <button class="nav-link rounded-pill" id="images-tab" data-bs-toggle="pill" data-bs-target="#images" type="button" role="tab" aria-selected="false">Images</button>
+  </li>
+  <li class="nav-item" role="presentation">
+    <button class="nav-link rounded-pill" id="videos-tab" data-bs-toggle="pill" data-bs-target="#videos" type="button" role="tab" aria-selected="false">Videos</button>
+  </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link rounded-pill" id="audios-tab" data-bs-toggle="pill" data-bs-target="#audios" type="button" role="tab" aria-selected="false">Audio</button>
+    </li>
+  <li class="nav-item" role="presentation">
+    <button class="nav-link rounded-pill" id="docs-tab" data-bs-toggle="pill" data-bs-target="#docs" type="button" role="tab" aria-selected="false">Documents</button>
+  </li>
+</ul>
+
+<!-- Tab panes -->
+<div class="tab-content" id="media-tabs-content">
+  <div class="tab-pane fade show active" id="all-media" role="tabpanel" tabindex="0">
+    {{ render_files(files, "No files uploaded") }}
+  </div>
+  <div class="tab-pane fade" id="images" role="tabpanel" tabindex="0">
+    {{ render_files(images, "No image files found") }}
+  </div>
+  <div class="tab-pane fade" id="videos" role="tabpanel" tabindex="0">
+    {{ render_files(videos, "No video files found") }}
+  </div>
+    <div class="tab-pane fade" id="audios" role="tabpanel" tabindex="0">
+        {{ render_files(audios if audios is defined else [], "No audio files found") }}
+    </div>
+  <div class="tab-pane fade" id="docs" role="tabpanel" tabindex="0">
+    {{ render_files(docs, "No document files found") }}
+  </div>
+</div>
+{% endblock %}

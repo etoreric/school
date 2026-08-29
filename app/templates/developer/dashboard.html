@@ -1,0 +1,70 @@
+{% extends "admin/base.html" %}
+{% block title %}Developer Console{% endblock %}
+
+{% block admin_content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="fw-bold m-0 text-dark"><i class="fa-solid fa-code me-2 text-primary"></i>Developer Console</h4>
+        <p class="text-muted mb-0 mt-1">Create schools and manage their administrators.</p>
+    </div>
+    <form method="POST" action="{{ url_for('developer.create_invite') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button type="submit" class="btn btn-primary"><i class="fa-solid fa-link me-2"></i>Generate School Link</button>
+    </form>
+</div>
+
+{% if generated_link %}
+<div class="alert alert-success border-0 shadow-sm d-flex align-items-center gap-3">
+    <i class="fa-solid fa-circle-check fa-lg"></i>
+    <div class="flex-grow-1">
+        <strong>New school link generated</strong>
+        <div class="small text-break">{{ generated_link }}</div>
+    </div>
+    <button type="button" class="btn btn-sm btn-outline-success" data-copy-link="{{ generated_link }}" title="Copy link"><i class="fa-regular fa-copy"></i></button>
+</div>
+{% endif %}
+
+<div class="table-card mb-4">
+    <div class="p-4 border-bottom">
+        <h5 class="fw-bold mb-1">Schools and Administrators</h5>
+        <p class="text-muted small mb-0">{{ schools|length }} school{{ '' if schools|length == 1 else 's' }} registered</p>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="bg-light"><tr><th class="px-4">School</th><th>Administrator</th><th>Status</th><th class="text-end px-4">Action</th></tr></thead>
+            <tbody>
+            {% for school in schools %}
+                {% for administrator in school.administrators %}
+                <tr>
+                    {% if loop.first %}<td class="px-4 fw-semibold" rowspan="{{ school.administrators|length }}">{{ school.name }}<small class="d-block text-muted">Created {{ school.created_at.strftime('%Y-%m-%d') }}</small></td>{% endif %}
+                    <td>{{ administrator.username }}<small class="d-block text-muted">{{ administrator.email }}</small></td>
+                    <td>{% if administrator.is_active %}<span class="badge bg-success bg-opacity-10 text-success">Active</span>{% else %}<span class="badge bg-danger bg-opacity-10 text-danger">Deactivated</span>{% endif %}</td>
+                    <td class="text-end px-4"><form method="POST" action="{{ url_for('developer.toggle_administrator', school_id=school.id, user_id=administrator.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button type="submit" class="btn btn-sm btn-outline-secondary">{% if administrator.is_active %}Deactivate{% else %}Activate{% endif %}</button></form></td>
+                </tr>
+                {% endfor %}
+            {% else %}
+                <tr><td colspan="4" class="text-center py-5 text-muted">No schools have been created yet.</td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="table-card">
+    <div class="p-4 border-bottom"><h5 class="fw-bold mb-1">Unused Links</h5><p class="text-muted small mb-0">Each link can create one school and one administrator.</p></div>
+    <div class="list-group list-group-flush">
+        {% for invite in invites %}<div class="list-group-item px-4 py-3 d-flex justify-content-between align-items-center"><span class="text-muted small">Created {{ invite.created_at.strftime('%Y-%m-%d %H:%M') }}</span><span class="badge bg-warning bg-opacity-10 text-warning">Unused</span></div>{% else %}<div class="p-4 text-muted">No unused links.</div>{% endfor %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.querySelectorAll('[data-copy-link]').forEach(function (button) {
+    button.addEventListener('click', function () {
+        navigator.clipboard.writeText(button.dataset.copyLink);
+        button.innerHTML = '<i class="fa-solid fa-check"></i>';
+    });
+});
+</script>
+{% endblock %}

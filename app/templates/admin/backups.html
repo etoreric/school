@@ -1,0 +1,75 @@
+{% extends "admin/base.html" %}
+{% block title %}Database Backups{% endblock %}
+
+{% block admin_content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h4 class="fw-bold m-0 text-dark"><i class="fa-solid fa-database me-2 text-primary"></i>Database Backups & Recovery</h4>
+    
+    <form action="{{ url_for('admin.run_backup') }}" method="POST">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button type="submit" class="btn btn-primary d-flex align-items-center gap-2 rounded-3 py-2 px-3">
+            <i class="fa-solid fa-plus"></i>
+            <span>Create New Backup</span>
+        </button>
+    </form>
+</div>
+
+<div class="alert alert-warning border-0 rounded-3 mb-4 p-3 d-flex align-items-start gap-3">
+    <div class="bg-white rounded-circle p-2 text-warning d-inline-flex align-items-center justify-content-center" style="width: 32px; height: 32px; min-width: 32px;">
+        <i class="fa-solid fa-triangle-exclamation"></i>
+    </div>
+    <div>
+        <h6 class="fw-bold m-0 text-dark">Data Restoration warning</h6>
+        <p class="m-0 text-muted text-sm mt-1">Restoring a backup will overwrite the active school database records completely. Ensure you have the current database saved if needed.</p>
+    </div>
+</div>
+
+<div class="table-card">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="bg-light">
+                <tr>
+                    <th scope="col" class="py-3 px-4 border-0 text-secondary fw-semibold">Backup Filename</th>
+                    <th scope="col" class="py-3 border-0 text-secondary fw-semibold">File Size</th>
+                    <th scope="col" class="py-3 border-0 text-secondary fw-semibold">Creation Date</th>
+                    <th scope="col" class="py-3 border-0 text-secondary fw-semibold text-end px-4">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for b in backups %}
+                    <tr>
+                        <td class="py-3 px-4 fw-semibold text-dark">
+                            <i class="fa-regular fa-file-zipper text-warning fa-lg me-2"></i> {{ b.filename }}
+                        </td>
+                        <td><span class="text-muted text-sm">{{ b.size }}</span></td>
+                        <td><span class="text-muted text-sm">{{ b.created_at }}</span></td>
+                        <td class="text-end px-4">
+                            <div class="d-flex justify-content-end gap-2">
+                                <form action="{{ url_for('admin.restore_backup', filename=b.filename) }}" method="POST" onsubmit="return confirm('WARNING: Overwrite the active database and restore from this backup file?');">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <button type="submit" class="btn btn-action btn-success d-flex align-items-center gap-1">
+                                        <i class="fa-solid fa-clock-rotate-left"></i> Restore
+                                    </button>
+                                </form>
+                                <form action="{{ url_for('admin.delete_backup', filename=b.filename) }}" method="POST" onsubmit="return confirm('Delete this backup file permanently?');">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <button type="submit" class="btn btn-action btn-danger bg-opacity-10 text-danger border-0">
+                                        <i class="fa-regular fa-trash-can"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                {% else %}
+                    <tr>
+                        <td colspan="4" class="text-center py-5 text-muted">
+                            <i class="fa-solid fa-server fa-3x mb-3 text-secondary"></i>
+                            <p>No database backup logs found. Create a backup to get started.</p>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,89 @@
+{% extends "admin/base.html" %}
+{% block title %}Events Calendar{% endblock %}
+
+{% block admin_content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h4 class="fw-bold m-0 text-dark"><i class="fa-solid fa-calendar-days me-2 text-primary"></i>Campus Events Calendar</h4>
+    <a href="{{ url_for('admin.new_event') }}" class="btn btn-primary d-flex align-items-center gap-2 rounded-3 py-2 px-3">
+        <i class="fa-solid fa-plus"></i>
+        <span>Schedule New Event</span>
+    </a>
+</div>
+
+<div class="table-card">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="bg-light">
+                <tr>
+                    <th scope="col" class="py-3 px-4 border-0 text-secondary fw-semibold">Event Title</th>
+                    <th scope="col" class="py-3 border-0 text-secondary fw-semibold">Schedule Time</th>
+                    <th scope="col" class="py-3 border-0 text-secondary fw-semibold">Venue / Location</th>
+                    <th scope="col" class="py-3 border-0 text-secondary fw-semibold">Countdown</th>
+                    <th scope="col" class="py-3 border-0 text-secondary fw-semibold">Status</th>
+                    <th scope="col" class="py-3 border-0 text-secondary fw-semibold text-end px-4">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for event in events %}
+                    <tr>
+                        <td class="py-3 px-4 fw-semibold text-dark">
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="overflow-hidden rounded-3 border" style="width: 50px; height: 38px;">
+                                    {% if event.image_url %}
+                                        <img src="/static/uploads/{{ event.image_url }}" class="w-100 h-100 object-fit-cover" alt="Thumbnail">
+                                    {% else %}
+                                        <img src="https://images.unsplash.com/photo-1511578314322-379afb476865?q=80&w=150" class="w-100 h-100 object-fit-cover" alt="Placeholder">
+                                    {% endif %}
+                                </div>
+                                <span>{{ event.title }}</span>
+                            </div>
+                        </td>
+                        <td>
+                            <span class="d-block text-sm fw-medium text-dark">{{ event.start_time.strftime('%Y-%m-%d %H:%M') }}</span>
+                            <small class="text-muted text-xxs">Ends: {{ event.end_time.strftime('%Y-%m-%d %H:%M') }}</small>
+                        </td>
+                        <td><span class="text-muted text-sm"><i class="fa-solid fa-location-dot me-1 text-primary"></i>{{ event.venue }}</span></td>
+                        <td>
+                            {% if event.countdown_enabled %}
+                                <span class="badge bg-light text-primary border px-3 py-1.5 rounded-pill"><i class="fa-regular fa-clock me-1"></i>Active</span>
+                            {% else %}
+                                <span class="text-muted text-sm">- None -</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if event.is_published %}
+                                <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-10 px-3 py-2 rounded-pill">Published</span>
+                            {% else %}
+                                <span class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary border-opacity-10 px-3 py-2 rounded-pill">Draft</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-end px-4">
+                            <div class="d-flex justify-content-end gap-2">
+                                <a href="{{ url_for('main.event_detail', slug=event.slug) }}" class="btn btn-action btn-light border" target="_blank">
+                                    <i class="fa-regular fa-eye text-secondary"></i>
+                                </a>
+                                <a href="{{ url_for('admin.edit_event', id=event.id) }}" class="btn btn-action btn-primary bg-opacity-10 text-primary border-0">
+                                    <i class="fa-regular fa-pen-to-square"></i>
+                                </a>
+                                <form action="{{ url_for('admin.delete_event', id=event.id) }}" method="POST" onsubmit="return confirm('Delete this event listing?');">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <button type="submit" class="btn btn-action btn-danger bg-opacity-10 text-danger border-0">
+                                        <i class="fa-regular fa-trash-can"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                {% else %}
+                    <tr>
+                        <td colspan="6" class="text-center py-5 text-muted">
+                            <i class="fa-regular fa-calendar-times fa-3x mb-3 text-secondary"></i>
+                            <p>No events scheduled in the database.</p>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

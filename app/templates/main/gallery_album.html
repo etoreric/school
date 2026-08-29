@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}{{ album.title }} Album{% endblock %}
+
+{% block content %}
+<section class="section-padding bg-light">
+    <div class="container">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{{ url_for('main.index') }}" class="text-decoration-none text-muted">Home</a></li>
+                <li class="breadcrumb-item"><a href="{{ url_for('main.gallery') }}" class="text-decoration-none text-muted">Gallery</a></li>
+                <li class="breadcrumb-item active text-primary-custom" aria-current="page">{{ album.title }}</li>
+            </ol>
+        </nav>
+        
+        <div class="mt-5 mb-5">
+            <h1 class="display-font fw-bold text-dark mb-2">{{ album.title }}</h1>
+            <p class="text-muted m-0 fs-5">{{ album.description }}</p>
+        </div>
+        
+        <div class="row g-3">
+            {% for item in album.media %}
+                <div class="col-lg-3 col-md-4 col-sm-6">
+                    <div class="position-relative overflow-hidden rounded-4 shadow-sm" style="height: 240px; group">
+                        {% if item.media_type == 'video' %}
+                            <video src="/static/uploads/{{ item.media_path }}" class="img-fluid w-100 h-100 object-fit-cover transition-transform" style="transition: transform 0.5s ease;" muted loop autoplay playsinline controls></video>
+                            <a href="/static/uploads/{{ item.media_path }}" class="gallery-thumb position-absolute top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center bg-dark bg-opacity-70 opacity-0 transition-opacity text-white text-decoration-none" data-caption="{{ item.caption }}" style="transition: opacity 0.3s ease;">
+                                <i class="fa-solid fa-play fa-2x"></i>
+                            </a>
+                        {% elif item.media_type == 'audio' %}
+                            <div class="d-flex align-items-center justify-content-center bg-light rounded-4 h-100 p-3">
+                                <audio src="/static/uploads/{{ item.media_path }}" controls style="width:100%;"></audio>
+                            </div>
+                        {% else %}
+                            <img src="/static/uploads/{{ item.media_path }}" class="img-fluid w-100 h-100 object-fit-cover transition-transform" style="transition: transform 0.5s ease;" alt="{{ item.caption or 'Gallery picture' }}">
+                            <a href="/static/uploads/{{ item.media_path }}" class="gallery-thumb position-absolute top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center bg-dark bg-opacity-70 opacity-0 transition-opacity text-white text-decoration-none" data-caption="{{ item.caption }}" style="transition: opacity 0.3s ease;">
+                                <i class="fa-solid fa-magnifying-glass-plus fa-2x"></i>
+                            </a>
+                        {% endif %}
+                    </div>
+                </div>
+            {% else %}
+                <div class="col-12 text-center py-5 bg-white rounded-4 shadow-sm border border-light">
+                    <i class="fa-regular fa-image fa-3x mb-3"></i>
+                    <h5>Album is Empty</h5>
+                    <p class="text-muted">No images have been uploaded to this album yet.</p>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+{% endblock %}

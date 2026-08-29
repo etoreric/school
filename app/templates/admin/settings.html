@@ -1,0 +1,205 @@
+{% extends "admin/base.html" %}
+{% block title %}System Settings{% endblock %}
+
+{% block admin_content %}
+<div class="mb-4">
+    <h4 class="fw-bold m-0 text-dark"><i class="fa-solid fa-sliders me-2 text-primary"></i>Website settings</h4>
+</div>
+
+<form action="" method="POST" enctype="multipart/form-data">
+    {{ form.hidden_tag() }}
+    {% if form.errors %}
+        <div class="alert alert-danger">
+            <strong>Please fix the following errors:</strong>
+            <ul class="mb-0">
+                {% for field_errors in form.errors.values() %}
+                    {% for error in field_errors %}
+                        <li>{{ error }}</li>
+                    {% endfor %}
+                {% endfor %}
+            </ul>
+        </div>
+    {% endif %}
+    
+    <div class="row g-4">
+        <!-- School Profile & Assets -->
+        <div class="col-lg-6">
+            <div class="table-card p-4 h-100">
+                <h5 class="fw-bold border-bottom pb-2 mb-4 text-primary"><i class="fa-solid fa-school me-2"></i>School Branding</h5>
+                
+                <div class="mb-3">
+                    <label class="form-label text-muted fw-bold">School Name</label>
+                    {{ form.school_name(class="form-control p-3 bg-light border-0 rounded-3") }}
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label text-muted fw-bold">Custom Domain Name (URL)</label>
+                    {{ form.custom_domain(class="form-control p-3 bg-light border-0 rounded-3", placeholder="e.g. www.sunnyhigh.edu") }}
+                    <small class="text-muted mt-1 d-block">Configure the public custom domain name associated with this school website portal.</small>
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label text-muted fw-bold">School Logo Image</label>
+                    {{ form.logo(class="form-control p-3 bg-light border-0 rounded-3") }}
+                    {% if get_setting('logo_url') %}
+                        <div class="mt-2 bg-light p-2 rounded text-center border">
+                            <img src="{{ get_setting('logo_url') }}" alt="logo preview" style="max-height: 50px;">
+                        </div>
+                    {% endif %}
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label text-muted fw-bold">Favicon Icon (ICO/PNG)</label>
+                    {{ form.favicon(class="form-control p-3 bg-light border-0 rounded-3") }}
+                    {% if get_setting('favicon_url') %}
+                        <div class="mt-2 bg-light p-2 rounded text-center border">
+                            <img src="{{ get_setting('favicon_url') }}" alt="favicon preview" style="max-height: 25px;">
+                        </div>
+                    {% endif %}
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label text-muted fw-bold">Hero Background Image</label>
+                    {{ form.hero_image(class="form-control p-3 bg-light border-0 rounded-3") }}
+                    {% if get_setting('hero_image_url') %}
+                        <div class="mt-2 bg-light p-2 rounded text-center border">
+                            <img src="{{ get_setting('hero_image_url') }}" alt="hero preview" style="max-height: 100px;">
+                        </div>
+                    {% endif %}
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label text-muted fw-bold">Welcome Section Image</label>
+                    {{ form.welcome_image(class="form-control p-3 bg-light border-0 rounded-3") }}
+                    {% if get_setting('welcome_image_url') %}
+                        <div class="mt-2 bg-light p-2 rounded text-center border">
+                            <img src="{{ get_setting('welcome_image_url') }}" alt="welcome preview" style="max-height: 100px;">
+                        </div>
+                    {% endif %}
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label text-muted fw-bold">Principal/Proprietor Image</label>
+                    {{ form.principal_image(class="form-control p-3 bg-light border-0 rounded-3") }}
+                    {% if get_setting('principal_image_url') %}
+                        <div class="mt-2 bg-light p-2 rounded text-center border">
+                            <img src="{{ get_setting('principal_image_url') }}" alt="principal preview" style="max-height: 100px;">
+                        </div>
+                    {% endif %}
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label text-muted fw-bold">Primary Color</label>
+                        <div class="d-flex gap-2">
+                            {{ form.primary_color(class="form-control p-3 bg-light border-0 rounded-3", type="text", id="primary_color") }}
+                            <input type="color" class="form-control border-0 p-1" style="width: 50px; height: 50px; cursor: pointer;" value="{{ get_setting('primary_color', '#2563eb') }}" oninput="document.getElementById('primary_color').value = this.value">
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label text-muted fw-bold">Secondary Color</label>
+                        <div class="d-flex gap-2">
+                            {{ form.secondary_color(class="form-control p-3 bg-light border-0 rounded-3", type="text", id="secondary_color") }}
+                            <input type="color" class="form-control border-0 p-1" style="width: 50px; height: 50px; cursor: pointer;" value="{{ get_setting('secondary_color', '#f59e0b') }}" oninput="document.getElementById('secondary_color').value = this.value">
+                        </div>
+                    </div>
+
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label text-muted fw-bold">Footer BG Color</label>
+                        <div class="d-flex gap-2">
+                            {{ form.footer_bg_color(class="form-control p-3 bg-light border-0 rounded-3", type="text", id="footer_bg_color") }}
+                            <input type="color" class="form-control border-0 p-1" style="width: 50px; height: 50px; cursor: pointer;" value="{{ get_setting('footer_bg_color', '#0f172a') }}" oninput="document.getElementById('footer_bg_color').value = this.value">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Contact & Maps details -->
+        <div class="col-lg-6">
+            <div class="table-card p-4 h-100">
+                <h5 class="fw-bold border-bottom pb-2 mb-4 text-primary"><i class="fa-solid fa-address-book me-2"></i>Contact Details</h5>
+                
+                <div class="mb-3">
+                    <label class="form-label text-muted fw-bold">Official Email</label>
+                    {{ form.contact_email(class="form-control p-3 bg-light border-0 rounded-3") }}
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label text-muted fw-bold">Official Phone Number</label>
+                    {{ form.contact_phone(class="form-control p-3 bg-light border-0 rounded-3") }}
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label text-muted fw-bold">Official Address</label>
+                    {{ form.contact_address(class="form-control p-3 bg-light border-0 rounded-3", rows="2") }}
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label text-muted fw-bold">Google Maps Embed iframe Link</label>
+                    {{ form.google_maps_url(class="form-control p-3 bg-light border-0 rounded-3", rows="2", placeholder="Embed iframe src link...") }}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Social channels -->
+        <div class="col-lg-6">
+            <div class="table-card p-4 h-100">
+                <h5 class="fw-bold border-bottom pb-2 mb-4 text-primary"><i class="fa-solid fa-share-nodes me-2"></i>Social Channels</h5>
+                
+                <div class="mb-3">
+                    <label class="form-label text-muted fw-bold">Facebook URL</label>
+                    {{ form.social_facebook(class="form-control p-3 bg-light border-0 rounded-3") }}
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label text-muted fw-bold">Twitter/X URL</label>
+                    {{ form.social_twitter(class="form-control p-3 bg-light border-0 rounded-3") }}
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label text-muted fw-bold">Instagram URL</label>
+                    {{ form.social_instagram(class="form-control p-3 bg-light border-0 rounded-3") }}
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label text-muted fw-bold">YouTube Channel URL</label>
+                    {{ form.social_youtube(class="form-control p-3 bg-light border-0 rounded-3") }}
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label text-muted fw-bold">WhatsApp Contact Link</label>
+                    {{ form.social_whatsapp(class="form-control p-3 bg-light border-0 rounded-3") }}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Search Engine Optimization & Code -->
+        <div class="col-lg-6">
+            <div class="table-card p-4 h-100">
+                <h5 class="fw-bold border-bottom pb-2 mb-4 text-primary"><i class="fa-solid fa-chart-simple me-2"></i>SEO & Global Scripts</h5>
+                
+                <div class="mb-3">
+                    <label class="form-label text-muted fw-bold">Website Meta Description</label>
+                    {{ form.seo_meta_description(class="form-control p-3 bg-light border-0 rounded-3", rows="3") }}
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label text-muted fw-bold">Analytics tracking script code</label>
+                    {{ form.analytics_code(class="form-control p-3 bg-light border-0 rounded-3", rows="4") }}
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label text-muted fw-bold">Footer copyright text</label>
+                    {{ form.footer_text(class="form-control p-3 bg-light border-0 rounded-3") }}
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-12 mt-4 mb-5">
+            {{ form.submit(class="btn custom-btn btn-primary w-100 p-3 fs-5") }}
+        </div>
+    </div>
+</form>
+{% endblock %}

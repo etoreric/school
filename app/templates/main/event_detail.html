@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+{% block title %}{{ event.title }}{% endblock %}
+
+{% block content %}
+<section class="section-padding bg-light">
+    <div class="container">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{{ url_for('main.index') }}" class="text-decoration-none text-muted">Home</a></li>
+                <li class="breadcrumb-item"><a href="{{ url_for('main.events') }}" class="text-decoration-none text-muted">Events</a></li>
+                <li class="breadcrumb-item active text-primary-custom" aria-current="page">{{ event.title }}</li>
+            </ol>
+        </nav>
+        
+        <div class="row mt-5 justify-content-center">
+            <div class="col-lg-9">
+                <div class="bg-white rounded-4 shadow-sm border border-light overflow-hidden">
+                    <!-- Featured Image -->
+                    {% if event.image_url %}
+                        <img src="/static/uploads/{{ event.image_url }}" class="img-fluid w-100 object-fit-cover" style="max-height: 400px;" alt="{{ event.title }}">
+                    {% endif %}
+                    
+                    <div class="p-5">
+                        <h1 class="display-font mb-4 fw-bold text-dark">{{ event.title }}</h1>
+                        
+                        <!-- Event Info Panel -->
+                        <div class="bg-light rounded-4 p-4 mb-5 row g-4">
+                            <div class="col-md-4">
+                                <div class="d-flex align-items-center gap-3">
+                                    <div class="bg-primary-custom text-white rounded-3 p-3 d-flex align-items-center justify-content-center" style="width:50px; height:50px;">
+                                        <i class="fa-regular fa-calendar-days fa-lg"></i>
+                                    </div>
+                                    <div>
+                                        <h6 class="m-0 fw-bold">Date & Time</h6>
+                                        <small class="text-muted d-block">{{ event.start_time.strftime('%b %d, %Y') }}</small>
+                                        <small class="text-muted">{{ event.start_time.strftime('%H:%M') }} - {{ event.end_time.strftime('%H:%M') }}</small>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-4">
+                                <div class="d-flex align-items-center gap-3">
+                                    <div class="bg-primary-custom text-white rounded-3 p-3 d-flex align-items-center justify-content-center" style="width:50px; height:50px;">
+                                        <i class="fa-solid fa-location-dot fa-lg"></i>
+                                    </div>
+                                    <div>
+                                        <h6 class="m-0 fw-bold">Venue</h6>
+                                        <small class="text-muted">{{ event.venue }}</small>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-4">
+                                <div class="d-flex align-items-center gap-3">
+                                    <div class="bg-primary-custom text-white rounded-3 p-3 d-flex align-items-center justify-content-center" style="width:50px; height:50px;">
+                                        <i class="fa-solid fa-user-tie fa-lg"></i>
+                                    </div>
+                                    <div>
+                                        <h6 class="m-0 fw-bold">Organizer</h6>
+                                        <small class="text-muted">{{ event.organizer or 'School Board' }}</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Event Description -->
+                        <div class="event-body-content leading-relaxed mb-5" style="font-size:1.1rem; line-height:1.8;">
+                            {{ event.description | safe }}
+                        </div>
+                        
+                        <!-- Countdown / CTA -->
+                        <div class="border-top pt-5 d-flex flex-column flex-md-row align-items-center justify-content-between gap-4">
+                            {% if event.countdown_enabled %}
+                                <div>
+                                    <h6 class="text-muted mb-1 text-uppercase fw-bold" style="font-size:0.8rem; letter-spacing:1px;">Countdown to Event</h6>
+                                    <h3 class="fw-bold text-primary-custom m-0" data-countdown="{{ event.start_time.strftime('%Y-%m-%d %H:%M:%S') }}">Loading...</h3>
+                                </div>
+                            {% endif %}
+                            
+                            {% if event.registration_url %}
+                                <a href="{{ event.registration_url }}" class="btn custom-btn btn-primary-custom px-5 py-3" target="_blank">Register for Event</a>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

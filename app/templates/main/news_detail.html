@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+{% block title %}{{ post.title }}{% endblock %}
+
+{% block content %}
+<section class="section-padding bg-light">
+    <div class="container">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{{ url_for('main.index') }}" class="text-decoration-none text-muted">Home</a></li>
+                <li class="breadcrumb-item"><a href="{{ url_for('main.news') }}" class="text-decoration-none text-muted">News</a></li>
+                <li class="breadcrumb-item active text-primary-custom" aria-current="page">{{ post.title }}</li>
+            </ol>
+        </nav>
+        
+        <div class="row mt-5 justify-content-center">
+            <div class="col-lg-9">
+                <article class="bg-white rounded-4 shadow-sm border border-light overflow-hidden">
+                    <!-- Featured Image -->
+                    {% if post.featured_image %}
+                        <img src="/static/uploads/{{ post.featured_image }}" class="img-fluid w-100 object-fit-cover" style="max-height: 450px;" alt="{{ post.title }}">
+                    {% endif %}
+                    
+                    <div class="p-5">
+                        <div class="meta-info border-bottom pb-3 mb-4">
+                            <span><i class="fa-regular fa-calendar me-1"></i>{{ post.published_at.strftime('%B %d, %Y') }}</span>
+                            {% if post.category %}
+                                <span class="text-primary-custom fw-semibold"><i class="fa-solid fa-tag me-1"></i>{{ post.category.name }}</span>
+                            {% endif %}
+                            <span><i class="fa-regular fa-eye me-1"></i>{{ post.views_count }} Views</span>
+                        </div>
+                        
+                        <h1 class="display-font mb-4 fw-bold text-dark">{{ post.title }}</h1>
+                        
+                        <div class="post-body leading-relaxed" style="font-size:1.1rem; line-height:1.8;">
+                            {{ post.content | safe }}
+                        </div>
+                        
+                        {% if post.tags %}
+                            <div class="d-flex gap-2 mt-5 border-top pt-4">
+                                <span class="text-muted fw-medium me-2">Tags:</span>
+                                {% for tag in post.tags %}
+                                    <span class="badge bg-light text-secondary rounded-pill border px-3 py-2">#{{ tag.name }}</span>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                </article>
+                
+                <!-- Comment section -->
+                {% if post.comments_enabled %}
+                    <div class="bg-white rounded-4 shadow-sm border border-light p-5 mt-5">
+                        <h4 class="fw-bold mb-4">Discussion ({{ comments | length }})</h4>
+                        
+                        <!-- List comments -->
+                        <div class="d-flex flex-column gap-4 mb-5">
+                            {% for comment in comments %}
+                                <div class="d-flex gap-3 border-bottom pb-4">
+                                    <div class="bg-light rounded-circle d-flex align-items-center justify-content-center text-muted fw-bold" style="width: 50px; height: 50px; min-width: 50px;">
+                                        {{ comment.author_name[0] | upper }}
+                                    </div>
+                                    <div>
+                                        <div class="d-flex align-items-center gap-2 mb-1">
+                                            <h6 class="m-0 fw-bold">{{ comment.author_name }}</h6>
+                                            <small class="text-muted" style="font-size:0.75rem;">{{ comment.created_at.strftime('%b %d, %Y at %H:%M') }}</small>
+                                        </div>
+                                        <p class="text-secondary m-0 leading-relaxed">{{ comment.content }}</p>
+                                    </div>
+                                </div>
+                            {% else %}
+                                <p class="text-muted">No comments have been posted yet. Be the first to share your thoughts!</p>
+                            {% endfor %}
+                        </div>
+                        
+                        <!-- Submit comment -->
+                        <h5 class="fw-bold mb-3">Leave a Comment</h5>
+                        <form action="{{ url_for('main.news_detail', slug=post.slug) }}" method="POST">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label text-muted">Your Name</label>
+                                    <input type="text" name="name" class="form-control rounded-3 bg-light border-0 p-3" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label text-muted">Email Address (Not Published)</label>
+                                    <input type="email" name="email" class="form-control rounded-3 bg-light border-0 p-3" required>
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label text-muted">Comment</label>
+                                    <textarea name="content" rows="4" class="form-control rounded-3 bg-light border-0 p-3" required></textarea>
+                                </div>
+                                <div class="col-12 mt-4">
+                                    <button type="submit" class="btn custom-btn btn-primary-custom">Submit Comment</button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

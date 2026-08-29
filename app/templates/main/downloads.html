@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+{% block title %}Download Center{% endblock %}
+
+{% block content %}
+<section class="section-padding bg-light">
+    <div class="container">
+        <div class="section-title-wrapper mb-5">
+            <span class="section-tag">Resources</span>
+            <h1 class="display-font fw-bold m-0 text-dark">Download Center</h1>
+        </div>
+        
+        <!-- Category Filter Chips -->
+        <div class="d-flex flex-wrap gap-2 mb-5">
+            <a href="{{ url_for('main.downloads') }}" class="btn custom-btn {% if not active_category %}btn-primary-custom{% else %}btn-secondary-custom{% endif %}">
+                All Downloads
+            </a>
+            <a href="{{ url_for('main.downloads', category='Newsletter') }}" class="btn custom-btn {% if active_category == 'Newsletter' %}btn-primary-custom{% else %}btn-secondary-custom{% endif %}">
+                Newsletters
+            </a>
+            <a href="{{ url_for('main.downloads', category='Syllabus') }}" class="btn custom-btn {% if active_category == 'Syllabus' %}btn-primary-custom{% else %}btn-secondary-custom{% endif %}">
+                Syllabus & Curriculum
+            </a>
+            <a href="{{ url_for('main.downloads', category='General') }}" class="btn custom-btn {% if active_category == 'General' %}btn-primary-custom{% else %}btn-secondary-custom{% endif %}">
+                General Documents
+            </a>
+        </div>
+        
+        <div class="row">
+            <div class="col-12">
+                <div class="bg-white rounded-4 shadow-sm border border-light overflow-hidden">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="bg-light">
+                                <tr>
+                                    <th scope="col" class="py-3 px-4 border-0 text-secondary fw-semibold">Resource Name</th>
+                                    <th scope="col" class="py-3 border-0 text-secondary fw-semibold">Category</th>
+                                    <th scope="col" class="py-3 border-0 text-secondary fw-semibold">File Type</th>
+                                    <th scope="col" class="py-3 border-0 text-secondary fw-semibold">Downloads Count</th>
+                                    <th scope="col" class="py-3 border-0 text-secondary fw-semibold text-end px-4">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in items %}
+                                    <tr>
+                                        <td class="py-4 px-4 fw-semibold text-dark">
+                                            <div class="d-flex align-items-center gap-3">
+                                                <div class="bg-light text-primary-custom rounded-3 p-3 d-flex align-items-center justify-content-center" style="width: 44px; height: 44px;">
+                                                    {% if item.file_type == 'PDF' %}
+                                                        <i class="fa-regular fa-file-pdf fa-lg text-danger"></i>
+                                                    {% elif item.file_type in ['DOC', 'DOCX'] %}
+                                                        <i class="fa-regular fa-file-word fa-lg text-primary"></i>
+                                                    {% elif item.file_type in ['XLS', 'XLSX'] %}
+                                                        <i class="fa-regular fa-file-excel fa-lg text-success"></i>
+                                                    {% elif item.file_type in ['ZIP', 'RAR'] %}
+                                                        <i class="fa-regular fa-file-zipper fa-lg text-warning"></i>
+                                                    {% else %}
+                                                        <i class="fa-regular fa-file fa-lg text-secondary"></i>
+                                                    {% endif %}
+                                                </div>
+                                                <div>
+                                                    <span class="d-block mb-1">{{ item.title }}</span>
+                                                    <small class="text-muted fw-normal">Added on: {{ item.created_at.strftime('%Y-%m-%d') }}</small>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-light text-secondary border px-3 py-2 rounded-pill">{{ item.category }}</span>
+                                        </td>
+                                        <td>
+                                            <span class="fw-bold text-muted">{{ item.file_type }}</span>
+                                        </td>
+                                        <td>
+                                            <span class="text-muted"><i class="fa-solid fa-download me-1"></i> {{ item.download_count }} downloads</span>
+                                        </td>
+                                        <td class="text-end px-4">
+                                            <a href="{{ url_for('main.file_download', download_id=item.id) }}" class="btn custom-btn btn-primary-custom btn-sm py-2 px-3">
+                                                Download <i class="fa-solid fa-chevron-down ms-1"></i>
+                                            </a>
+                                        </td>
+                                    </tr>
+                                {% else %}
+                                    <tr>
+                                        <td colspan="5" class="text-center py-5 text-muted">
+                                            <i class="fa-regular fa-file-excel fa-3x mb-3 text-secondary"></i>
+                                            <p>No downloadable documents found in this category.</p>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

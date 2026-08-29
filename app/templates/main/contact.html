@@ -1,0 +1,119 @@
+{% extends "base.html" %}
+{% block title %}Contact Us{% endblock %}
+
+{% block content %}
+<section class="section-padding bg-light">
+    <div class="container">
+        <div class="section-title-wrapper mb-5">
+            <span class="section-tag">Reach Us</span>
+            <h1 class="display-font fw-bold m-0 text-dark">Contact Information</h1>
+        </div>
+        
+        <div class="row g-5">
+            <div class="col-lg-5">
+                <div class="bg-white rounded-4 shadow-sm border border-light p-4 mb-4">
+                    <h5 class="fw-bold mb-4">Address Details</h5>
+                    
+                    <div class="d-flex align-items-start gap-3 mb-4">
+                        <div class="bg-primary-custom text-white rounded-3 p-3 d-flex align-items-center justify-content-center" style="width: 50px; height: 50px;">
+                            <i class="fa-solid fa-location-dot"></i>
+                        </div>
+                        <div>
+                            <h6 class="fw-bold mb-1">Campus Address</h6>
+                            <p class="text-muted m-0">{{ get_setting('contact_address') }}</p>
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex align-items-start gap-3 mb-4">
+                        <div class="bg-primary-custom text-white rounded-3 p-3 d-flex align-items-center justify-content-center" style="width: 50px; height: 50px;">
+                            <i class="fa-solid fa-phone"></i>
+                        </div>
+                        <div>
+                            <h6 class="fw-bold mb-1">Telephone</h6>
+                            <p class="text-muted m-0">{{ get_setting('contact_phone') }}</p>
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex align-items-start gap-3">
+                        <div class="bg-primary-custom text-white rounded-3 p-3 d-flex align-items-center justify-content-center" style="width: 50px; height: 50px;">
+                            <i class="fa-solid fa-envelope"></i>
+                        </div>
+                        <div>
+                            <h6 class="fw-bold mb-1">Email Inquiry</h6>
+                            <p class="text-muted m-0">{{ get_setting('contact_email') }}</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Social Channels -->
+                <div class="bg-white rounded-4 shadow-sm border border-light p-4">
+                    <h5 class="fw-bold mb-3">Connect With Us</h5>
+                    <div class="d-flex gap-2">
+                        {% if get_setting('social_facebook') %}
+                            <a href="{{ get_setting('social_facebook') }}" class="social-circle" target="_blank"><i class="fa-brands fa-facebook-f"></i></a>
+                        {% endif %}
+                        {% if get_setting('social_twitter') %}
+                            <a href="{{ get_setting('social_twitter') }}" class="social-circle" target="_blank"><i class="fa-brands fa-x-twitter"></i></a>
+                        {% endif %}
+                        {% if get_setting('social_instagram') %}
+                            <a href="{{ get_setting('social_instagram') }}" class="social-circle" target="_blank"><i class="fa-brands fa-instagram"></i></a>
+                        {% endif %}
+                        {% if get_setting('social_youtube') %}
+                            <a href="{{ get_setting('social_youtube') }}" class="social-circle" target="_blank"><i class="fa-brands fa-youtube"></i></a>
+                        {% endif %}
+                        {% if get_setting('social_whatsapp') %}
+                            <a href="{{ get_setting('social_whatsapp') }}" class="social-circle" target="_blank"><i class="fa-brands fa-whatsapp"></i></a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Message submission form -->
+            <div class="col-lg-7">
+                <div class="bg-white rounded-4 shadow-sm border border-light p-5">
+                    <h4 class="fw-bold mb-4">Send Us a Direct Message</h4>
+                    <form action="{{ url_for('main.contact') }}" method="POST">
+                        {{ form.hidden_tag() }}
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label text-muted">Your Full Name</label>
+                                {{ form.name(class="form-control rounded-3 bg-light border-0 p-3") }}
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label text-muted">Email Address</label>
+                                {{ form.email(class="form-control rounded-3 bg-light border-0 p-3") }}
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label text-muted">Phone Number</label>
+                                {{ form.phone(class="form-control rounded-3 bg-light border-0 p-3") }}
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label text-muted">Subject</label>
+                                {{ form.subject(class="form-control rounded-3 bg-light border-0 p-3") }}
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label text-muted">Your Message</label>
+                                {{ form.message_content(class="form-control rounded-3 bg-light border-0 p-3", rows="5") }}
+                            </div>
+                            <div class="col-12 mt-4">
+                                {{ form.submit(class="btn custom-btn btn-primary-custom w-100 p-3") }}
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Google map embedded directly -->
+        {% if get_setting('google_maps_url') %}
+            <div class="row mt-5">
+                <div class="col-12">
+                    <div class="map-container">
+                        <iframe src="{{ get_setting('google_maps_url') }}" allowfullscreen="" loading="lazy"></iframe>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}

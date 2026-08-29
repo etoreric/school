@@ -1,0 +1,68 @@
+<!-- Footer -->
+<footer class="footer-custom">
+    <div class="container">
+        <div class="row g-4 mb-5">
+            <div class="col-lg-4 col-md-6">
+                <h5 class="d-flex align-items-center gap-2 text-white">
+                    <i class="fa-solid fa-graduation-cap text-white"></i>
+                    <span>{{ get_setting('school_name', 'Sunny High School') }}</span>
+                </h5>
+                <p class="mt-3 text-light">
+                    Empowering young learners towards global citizenship through academic rigor, moral strength, and creative intelligence.
+                </p>
+                <div class="d-flex gap-3 mt-4">
+                    {% if get_setting('social_facebook') %}
+                        <a href="{{ get_setting('social_facebook') }}" class="social-circle" target="_blank"><i class="fa-brands fa-facebook-f"></i></a>
+                    {% endif %}
+                    {% if get_setting('social_twitter') %}
+                        <a href="{{ get_setting('social_twitter') }}" class="social-circle" target="_blank"><i class="fa-brands fa-x-twitter"></i></a>
+                    {% endif %}
+                    {% if get_setting('social_instagram') %}
+                        <a href="{{ get_setting('social_instagram') }}" class="social-circle" target="_blank"><i class="fa-brands fa-instagram"></i></a>
+                    {% endif %}
+                    {% if get_setting('social_youtube') %}
+                        <a href="{{ get_setting('social_youtube') }}" class="social-circle" target="_blank"><i class="fa-brands fa-youtube"></i></a>
+                    {% endif %}
+                    {% if get_setting('social_whatsapp') %}
+                        <a href="{{ get_setting('social_whatsapp') }}" class="social-circle" target="_blank"><i class="fa-brands fa-whatsapp"></i></a>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="col-lg-2 col-md-6">
+                <h5>Quick Links</h5>
+                <ul class="footer-links">
+                    <li><a href="{{ url_for('main.index') }}">Home</a></li>
+                    <li><a href="{{ url_for('main.page', slug='about') }}">About Us</a></li>
+                    <li><a href="{{ url_for('main.page', slug='faq') }}">FAQs</a></li>
+                </ul>
+            </div>
+            
+            <div class="col-lg-3 col-md-6">
+                <h5>Contact Info</h5>
+                <ul class="list-unstyled text-light">
+                    <li class="mb-2"><i class="fa-solid fa-location-dot me-2 text-primary-custom"></i>{{ get_setting('contact_address', '742 Evergreen Terrace') }}</li>
+                    <li class="mb-2"><i class="fa-solid fa-phone me-2 text-primary-custom"></i>{{ get_setting('contact_phone', '+1 (555) 789-0123') }}</li>
+                    <li class="mb-2"><i class="fa-solid fa-envelope me-2 text-primary-custom"></i>{{ get_setting('contact_email', 'info@sunnyhigh.edu') }}</li>
+                </ul>
+            </div>
+            
+            <div class="col-lg-3 col-md-6">
+                <h5>Portals</h5>
+                <p class="text-light">Administrator or staff login access.</p>
+                <a href="{{ url_for('auth.login') }}" class="btn btn-sm btn-outline-light d-inline-flex align-items-center gap-2">
+                    <i class="fa-solid fa-lock text-white"></i>
+                    <span>Admin Login</span>
+                </a>
+            </div>
+        </div>
+        
+        <hr class="border-secondary opacity-25">
+        
+        <div class="row align-items-center mt-4">
+            <div class="col-md-6 text-center text-md-start">
+                <p class="m-0 text-light">{{ get_setting('footer_text', '© 2026 Sunny High School') }}</p>
+            </div>
+        </div>
+    </div>
+</footer>

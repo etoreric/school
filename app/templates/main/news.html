@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+{% block title %}School News & Announcements{% endblock %}
+
+{% block content %}
+<section class="section-padding bg-light">
+    <div class="container">
+        <div class="row align-items-end g-4 mb-5">
+            <div class="col-lg-6">
+                <span class="section-tag">Announcements</span>
+                <h1 class="display-font fw-bold m-0 text-dark">School News</h1>
+            </div>
+            
+            <!-- Search bar -->
+            <div class="col-lg-6">
+                <form action="{{ url_for('main.news') }}" method="GET" class="d-flex gap-2">
+                    <input type="text" name="q" value="{{ search_query or '' }}" class="form-control rounded-3 border-0 bg-white p-3 shadow-sm" placeholder="Search news articles...">
+                    <button type="submit" class="btn custom-btn btn-primary-custom px-4"><i class="fa-solid fa-magnifying-glass"></i></button>
+                </form>
+            </div>
+        </div>
+        
+        <div class="row g-4">
+            <!-- Sidebar filter -->
+            <div class="col-lg-3">
+                <div class="bg-white rounded-4 p-4 shadow-sm border border-light mb-4">
+                    <h5 class="fw-bold mb-3">Categories</h5>
+                    <div class="list-group list-group-flush">
+                        <a href="{{ url_for('main.news') }}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center border-0 px-0 {% if not request.args.get('category') %}text-primary-custom fw-semibold{% endif %}">
+                            All News
+                        </a>
+                        {% for cat in categories %}
+                            <a href="{{ url_for('main.news', category=cat.slug) }}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center border-0 px-0 {% if request.args.get('category') == cat.slug %}text-primary-custom fw-semibold{% endif %}">
+                                {{ cat.name }}
+                                <span class="badge bg-light text-muted rounded-pill">{{ cat.posts | length }}</span>
+                            </a>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            
+            <!-- News feed -->
+            <div class="col-lg-9">
+                <div class="row g-4">
+                    {% for post in posts.items %}
+                        <div class="col-md-6">
+                            <div class="news-card h-100 d-flex flex-column justify-content-between">
+                                <div>
+                                    {% if post.featured_image %}
+                                        <img src="/static/uploads/{{ post.featured_image }}" class="card-img-top post-card-img" alt="{{ post.title }}">
+                                    {% else %}
+                                        <img src="https://images.unsplash.com/photo-1506784983877-45594efa4cbe?q=80&w=600&auto=format&fit=crop" class="card-img-top post-card-img" alt="Placeholder image">
+                                    {% endif %}
+                                    <div class="p-4">
+                                        <div class="meta-info">
+                                            <span><i class="fa-regular fa-calendar me-1"></i>{{ post.published_at.strftime('%B %d, %Y') }}</span>
+                                            {% if post.category %}
+                                                <span class="text-primary-custom fw-semibold"><i class="fa-solid fa-tag me-1"></i>{{ post.category.name }}</span>
+                                            {% endif %}
+                                        </div>
+                                        <h5 class="fw-bold mb-3"><a href="{{ url_for('main.news_detail', slug=post.slug) }}" class="text-decoration-none text-dark">{{ post.title }}</a></h5>
+                                        <p class="text-muted text-sm">{{ post.excerpt or post.content[:130]|striptags }}...</p>
+                                    </div>
+                                </div>
+                                <div class="px-4 pb-4">
+                                    <a href="{{ url_for('main.news_detail', slug=post.slug) }}" class="text-primary-custom text-decoration-none fw-bold d-inline-flex align-items-center gap-1">Read Article <i class="fa-solid fa-arrow-right"></i></a>
+                                </div>
+                            </div>
+                        </div>
+                    {% else %}
+                        <div class="col-12 text-center py-5 bg-white rounded-4 shadow-sm border border-light">
+                            <i class="fa-regular fa-folder-open fa-3x mb-3"></i>
+                            <h5>No Articles Found</h5>
+                            <p class="text-muted">We couldn't find any news posts matching your filters.</p>
+                        </div>
+                    {% endfor %}
+                </div>
+                
+                <!-- Pagination -->
+                {% if posts.pages > 1 %}
+                    <nav aria-label="Page navigation" class="mt-5">
+                        <ul class="pagination justify-content-center gap-2">
+                            {% if posts.has_prev %}
+                                <li class="page-item">
+                                    <a class="page-link border-0 rounded-3 shadow-sm p-3" href="{{ url_for('main.news', page=posts.prev_num, category=request.args.get('category'), q=search_query) }}" aria-label="Previous">
+                                        <span aria-hidden="true">&laquo;</span>
+                                    </a>
+                                </li>
+                            {% endif %}
+                            
+                            {% for page_num in posts.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+                                {% if page_num %}
+                                    <li class="page-item {% if page_num == posts.page %}active{% endif %}">
+                                        <a class="page-link border-0 rounded-3 shadow-sm p-3 {% if page_num == posts.page %}bg-primary-custom text-white{% endif %}" href="{{ url_for('main.news', page=page_num, category=request.args.get('category'), q=search_query) }}">{{ page_num }}</a>
+                                    </li>
+                                {% else %}
+                                    <li class="page-item disabled"><span class="page-link border-0 p-3">...</span></li>
+                                {% endif %}
+                            {% endfor %}
+                            
+                            {% if posts.has_next %}
+                                <li class="page-item">
+                                    <a class="page-link border-0 rounded-3 shadow-sm p-3" href="{{ url_for('main.news', page=posts.next_num, category=request.args.get('category'), q=search_query) }}" aria-label="Next">
+                                        <span aria-hidden="true">&raquo;</span>
+                                    </a>
+                                </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

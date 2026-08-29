@@ -1,0 +1,77 @@
+<!-- Header Navigation -->
+<nav class="navbar navbar-expand-lg navbar-custom sticky-top">
+    <div class="container">
+        <a class="navbar-brand d-flex align-items-center gap-2" href="{{ url_for('main.index') }}">
+            <i class="fa-solid fa-graduation-cap"></i>
+            <span>{{ get_setting('school_name', 'Sunny High School') }}</span>
+        </a>
+        
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarContent" aria-controls="navbarContent" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        
+        <div class="collapse navbar-collapse" id="navbarContent">
+            <ul class="navbar-nav ms-auto mb-2 mb-lg-0 align-items-center">
+                <li class="nav-item">
+                    <a class="nav-link {% if request.path == '/' %}active{% endif %}" href="{{ url_for('main.index') }}">Home</a>
+                </li>
+                
+                <!-- Academics / About Dropdown -->
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        About Us
+                    </a>
+                    <ul class="dropdown-menu border-0 shadow">
+                        <li><a class="dropdown-item" href="{{ url_for('main.page', slug='about') }}">Who We Are</a></li>
+                        <li><a class="dropdown-item" href="{{ url_for('main.page', slug='history') }}">Our History</a></li>
+                        <li><a class="dropdown-item" href="{{ url_for('main.page', slug='mission') }}">Vision & Mission</a></li>
+                    </ul>
+                </li>
+                
+                <li class="nav-item">
+                    <a class="nav-link {% if 'news' in request.path %}active{% endif %}" href="{{ url_for('main.news') }}">News</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {% if 'events' in request.path %}active{% endif %}" href="{{ url_for('main.events') }}">Events</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {% if 'downloads' in request.path %}active{% endif %}" href="{{ url_for('main.downloads') }}">Downloads</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {% if 'gallery' in request.path %}active{% endif %}" href="{{ url_for('main.gallery') }}">Gallery</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {% if 'videos' in request.path %}active{% endif %}" href="{{ url_for('main.videos') }}">Videos</a>
+                </li>
+                
+                <!-- Custom CMS Navbar Pages -->
+                {% for p in get_navbar_pages() %}
+                    {% if p.slug not in ['about', 'history', 'mission', 'faq'] %}
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.path == '/page/'~p.slug %}active{% endif %}" href="{{ url_for('main.page', slug=p.slug) }}">{{ p.title }}</a>
+                        </li>
+                    {% endif %}
+                {% endfor %}
+                
+                <li class="nav-item">
+                    <a class="nav-link {% if 'contact' in request.path %}active{% endif %}" href="{{ url_for('main.contact') }}">Contact</a>
+                </li>
+                
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<!-- Flash Messages -->
+<div class="container mt-4">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }} alert-dismissible fade show border-0 shadow-sm" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+</div>

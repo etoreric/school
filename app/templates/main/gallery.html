@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}School Gallery & Albums{% endblock %}
+
+{% block content %}
+<section class="section-padding bg-light">
+    <div class="container">
+        <div class="section-title-wrapper mb-5">
+            <span class="section-tag">Photos & Videos</span>
+            <h1 class="display-font fw-bold m-0 text-dark">School Gallery</h1>
+        </div>
+        
+        <div class="row g-4">
+            {% for album in albums %}
+                <div class="col-lg-4 col-md-6">
+                    <div class="news-card h-100 d-flex flex-column justify-content-between">
+                        <div>
+                            {% if album.cover_image %}
+                                <img src="/static/uploads/{{ album.cover_image }}" class="card-img-top post-card-img" alt="{{ album.title }}">
+                            {% else %}
+                                <img src="https://images.unsplash.com/photo-1546410531-bb4caa6b424d?q=80&w=600&auto=format&fit=crop" class="card-img-top post-card-img" alt="Gallery placeholder">
+                            {% endif %}
+                            <div class="p-4">
+                                <h5 class="fw-bold mb-2"><a href="{{ url_for('main.gallery_album', album_id=album.id) }}" class="text-decoration-none text-dark">{{ album.title }}</a></h5>
+                                <p class="text-muted text-sm">{{ album.description or 'Visual tour collection.' }}</p>
+                            </div>
+                        </div>
+                        <div class="px-4 pb-4">
+                            <a href="{{ url_for('main.gallery_album', album_id=album.id) }}" class="btn custom-btn btn-secondary-custom w-100 d-flex align-items-center justify-content-center gap-2">
+                                <span>Browse Album ({{ album.media | length }} photos)</span>
+                                <i class="fa-solid fa-arrow-right"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            {% else %}
+                <div class="col-12 text-center py-5 bg-white rounded-4 shadow-sm border border-light">
+                    <i class="fa-regular fa-images fa-3x mb-3"></i>
+                    <h5>No Albums Found</h5>
+                    <p class="text-muted">There are no media albums set up yet.</p>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+{% endblock %}
