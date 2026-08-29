@@ -57,8 +57,35 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 3. Simple Image/Video/Audio Previewer / Gallery lightbox Modal helper
     const galleryItems = document.querySelectorAll('.gallery-thumb');
+
+    // Touch support: tap gallery overlay to reveal it first, second tap opens lightbox
+    const isTouchDevice = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+    if (isTouchDevice) {
+        galleryItems.forEach(item => {
+            item.addEventListener('touchstart', (e) => {
+                const alreadyActive = item.classList.contains('touch-active');
+                // Dismiss any other active overlays
+                document.querySelectorAll('.gallery-thumb.touch-active').forEach(el => {
+                    el.classList.remove('touch-active');
+                    el.style.opacity = '';
+                });
+                if (!alreadyActive) {
+                    e.preventDefault();
+                    item.classList.add('touch-active');
+                    item.style.opacity = '1';
+                }
+                // If it was already active, let the click event proceed naturally (open lightbox)
+            }, { passive: false });
+        });
+    }
+
     galleryItems.forEach(item => {
         item.addEventListener('click', (e) => {
+            // On touch: only proceed if overlay is already revealed
+            if (isTouchDevice && !item.classList.contains('touch-active')) {
+                e.preventDefault();
+                return;
+            }
             e.preventDefault();
             const src = item.getAttribute('href');
             const caption = item.getAttribute('data-caption') || '';
@@ -133,7 +160,14 @@ document.addEventListener('DOMContentLoaded', () => {
             // Close modal on background click
             modal.addEventListener('click', (ev) => {
                 // allow clicks inside media element without closing
-                if (ev.target === modal) modal.remove();
+                if (ev.target === modal) {
+                    modal.remove();
+                    // Reset touch-active overlay state
+                    if (isTouchDevice) {
+                        item.classList.remove('touch-active');
+                        item.style.opacity = '';
+                    }
+                }
             });
 
             document.body.appendChild(modal);

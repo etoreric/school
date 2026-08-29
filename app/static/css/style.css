@@ -608,3 +608,181 @@ html {
     height: 100%;
     border: 0;
 }
+
+/* =========================================================================
+   MOBILE RESPONSIVENESS — TABLET (≤ 991px)
+   ========================================================================= */
+@media (max-width: 991.98px) {
+    /* Hero: center text when image stacks below */
+    .hero-slider-section {
+        min-height: auto;
+        padding-top: 80px;
+        padding-bottom: 40px;
+        text-align: center;
+    }
+
+    .hero-slider-section .d-flex.gap-3 {
+        justify-content: center;
+    }
+
+    /* Scale hero title down */
+    .hero-title {
+        font-size: 2.6rem;
+    }
+
+    /* Section header rows (title + "View All" button) — stack vertically */
+    .section-title-wrapper.d-flex {
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: 1rem;
+    }
+
+    /* Floating badge: remove negative left offset so it doesn't clip */
+    .floating-badge {
+        left: 0;
+        bottom: -10px;
+    }
+
+    .image-landing-content h2 {
+        font-size: 2.8rem;
+    }
+}
+
+/* =========================================================================
+   MOBILE RESPONSIVENESS — PHONES (≤ 767px)
+   ========================================================================= */
+@media (max-width: 767.98px) {
+    /* Reduce section vertical spacing */
+    .section-padding {
+        padding: 60px 0;
+    }
+
+    .section-title-wrapper {
+        margin-bottom: 36px;
+    }
+
+    /* Typography scale-down */
+    .hero-title {
+        font-size: 2rem;
+    }
+
+    .hero-subtitle {
+        font-size: 1rem;
+    }
+
+    .section-title {
+        font-size: 1.8rem;
+    }
+
+    /* Navbar brand: prevent oversized logo text */
+    .navbar-brand {
+        font-size: 1.2rem;
+    }
+
+    /* Hide floating badge on phones to prevent overflow */
+    .floating-badge {
+        display: none;
+    }
+
+    /* Hero image: tighter border on mobile */
+    .hero-image-card {
+        border-width: 4px;
+        border-radius: 16px;
+    }
+
+    /* Landing section heading */
+    .image-landing-content h2 {
+        font-size: 2rem;
+    }
+
+    /* Map: shorter on phones */
+    .map-container {
+        height: 280px;
+        border-radius: 16px;
+    }
+
+    /* Footer: center everything */
+    .footer-custom {
+        padding-top: 50px;
+        padding-bottom: 30px;
+        text-align: center;
+    }
+
+    .footer-custom .d-flex.gap-3 {
+        justify-content: center;
+    }
+
+    .footer-links a:hover {
+        padding-left: 0;
+    }
+
+    /* Cards: reduce padding on phones */
+    .premium-card {
+        padding: 1.5rem;
+    }
+
+    .testimonial-card {
+        padding: 1.75rem;
+    }
+}
+
+/* =========================================================================
+   MOBILE RESPONSIVENESS — SMALL PHONES (≤ 575px)
+   ========================================================================= */
+@media (max-width: 575.98px) {
+    .hero-title {
+        font-size: 1.75rem;
+    }
+
+    .section-title {
+        font-size: 1.5rem;
+    }
+
+    .hero-subtitle {
+        font-size: 0.95rem;
+    }
+
+    /* Buttons: stack full-width on very small screens */
+    .hero-slider-section .d-flex.gap-3 {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .hero-slider-section .custom-btn {
+        width: 100%;
+        text-align: center;
+        justify-content: center;
+    }
+
+    /* Testimonial quote icon: scale down */
+    .quote-icon {
+        font-size: 2rem;
+        top: 12px;
+        right: 16px;
+    }
+
+    /* Cards */
+    .premium-card {
+        padding: 1.25rem;
+    }
+
+    /* Footer columns: center text */
+    .footer-custom .col-lg-2,
+    .footer-custom .col-lg-3,
+    .footer-custom .col-lg-4 {
+        text-align: center;
+    }
+
+    /* Social icons: slightly smaller */
+    .social-circle {
+        width: 36px;
+        height: 36px;
+        font-size: 1rem;
+    }
+
+    /* Section header "View All" button: full width */
+    .section-title-wrapper .custom-btn {
+        width: 100%;
+        text-align: center;
+    }
+}
