@@ -44,7 +44,7 @@
                                     <i class="fa-regular fa-pen-to-square"></i>
                                 </a>
                                 
-                                {% if page.slug not in ['about', 'history', 'mission', 'faq'] %}
+                                {% if page.slug not in ['about', 'history', 'mission', 'faq', 'contact'] %}
                                     <form action="{{ url_for('admin.delete_page', id=page.id) }}" method="POST" onsubmit="return confirm('Are you sure you want to delete this page?');">
                                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                         <button type="submit" class="btn btn-action btn-danger bg-opacity-10 text-danger border-0">

@@ -1,6 +1,6 @@
 import os
 import shutil
-from datetime import datetime
+from datetime import datetime, timedelta
 from types import SimpleNamespace
 from flask import render_template, redirect, url_for, flash, request, current_app, jsonify
 from flask_login import login_required, current_user
@@ -50,6 +50,36 @@ def dashboard():
         'categories': Category.query.count(),
     }
     return render_template('admin/dashboard.html', stats=stats, recent_logs=[], notifications=[])
+
+@admin.route('/api/analytics/dashboard-metrics')
+@login_required
+@admin_required
+def dashboard_metrics():
+    today = datetime.utcnow().date()
+    labels = [
+        (today - timedelta(days=offset)).strftime('%b ') + str((today - timedelta(days=offset)).day)
+        for offset in range(6, -1, -1)
+    ]
+    return jsonify({'labels': labels, 'views': [0] * len(labels)})
+
+@admin.route('/api/sections/reorder', methods=['POST'])
+@login_required
+@admin_required
+def reorder_sections():
+    payload = request.get_json(silent=True) or {}
+    order_ids = payload.get('order')
+    if not isinstance(order_ids, list) or not all(isinstance(item, int) for item in order_ids):
+        return jsonify({'success': False, 'message': 'Invalid section order.'}), 400
+
+    sections = HomeSection.query.all()
+    sections_by_id = {section.id: section for section in sections}
+    if set(order_ids) != set(sections_by_id) or len(order_ids) != len(sections_by_id):
+        return jsonify({'success': False, 'message': 'Section order does not match current sections.'}), 400
+
+    for position, section_id in enumerate(order_ids):
+        sections_by_id[section_id].order = position
+    db.session.commit()
+    return jsonify({'success': True})
 
 # =========================================================================
 # PAGE MANAGEMENT
@@ -459,10 +489,7 @@ def delete_message(id):
 @login_required
 @admin_required
 def appearance():
-    sections = HomeSection.query.order_by(HomeSection.order.asc()).all()
-    testimonials = Testimonial.query.order_by(Testimonial.created_at.desc()).all()
-    test_form = TestimonialForm()
-    return render_template('admin/appearance.html', sections=sections, testimonials=testimonials, test_form=test_form)
+    return redirect(url_for('admin.settings'))
 
 @admin.route('/appearance/sections/<int:id>/edit', methods=['POST'])
 @login_required
@@ -547,6 +574,7 @@ def delete_testimonial(id):
 # =========================================================================
 # MEDIA MANAGER
 # =========================================================================
+@admin.route('/upload')
 @admin.route('/media')
 @login_required
 @admin_required
@@ -580,6 +608,7 @@ def upload_media():
     filepath = os.path.join(current_app.config['UPLOAD_FOLDER'], filename)
     f.save(filepath)
     return jsonify({
+        'success': True,
         'name': filename,
         'url': url_for('static', filename='uploads/' + filename),
         'size': format_file_size(os.path.getsize(filepath))
@@ -658,7 +687,16 @@ def settings():
         flash('Settings updated successfully.', 'success')
         return redirect(url_for('admin.settings'))
 
-    return render_template('admin/settings.html', form=form)
+    sections = HomeSection.query.order_by(HomeSection.order.asc()).all()
+    testimonials = Testimonial.query.order_by(Testimonial.created_at.desc()).all()
+    test_form = TestimonialForm()
+    return render_template(
+        'admin/settings.html',
+        form=form,
+        sections=sections,
+        testimonials=testimonials,
+        test_form=test_form,
+    )
 
 # =========================================================================
 # DATABASE BACKUPS
@@ -821,5 +859,507 @@ def delete_user(id):
         db.session.commit()
         flash(f"User '{user.username}' deleted successfully.", 'success')
     return redirect(url_for('admin.list_users'))
+
+
+# =========================================================================
+# SMS BROADCAST — PARENT CONTACTS & TWILIO INTEGRATION
+# =========================================================================
+
+def _clean_cell_value(val):
+    """Safely extracts string content from an openpyxl cell value."""
+    if val is None:
+        return ''
+    if isinstance(val, float):
+        if val.is_integer():
+            return str(int(val))
+        return f"{val:.0f}"
+    elif isinstance(val, int):
+        return str(val)
+    return str(val).strip()
+
+
+def _normalize_phone_number(raw_phone, default_country_code='+234'):
+    """
+    Normalizes raw phone numbers into standard E.164 format (+[country][number]).
+    Handles Nigerian standard (080..., 070..., 090..., 081...), international (+...),
+    and raw numeric strings from Excel.
+    """
+    if not raw_phone:
+        return None
+
+    cleaned = str(raw_phone).strip()
+    if cleaned.lower() in ('none', 'null', 'n/a', '-'):
+        return None
+
+    # Handle float representation from Excel e.g. "2348012345678.0"
+    if cleaned.endswith('.0'):
+        cleaned = cleaned[:-2]
+
+    # Remove all non-digit and non-plus characters
+    has_plus = cleaned.startswith('+')
+    digits_only = ''.join(c for c in cleaned if c.isdigit())
+
+    if not digits_only:
+        return None
+
+    # Clean default country prefix
+    country_prefix = default_country_code.strip() if default_country_code else '+234'
+    country_digits = ''.join(c for c in country_prefix if c.isdigit())
+    if not country_prefix.startswith('+'):
+        country_prefix = '+' + country_digits
+
+    # Case 1: Already has leading +
+    if has_plus:
+        return '+' + digits_only
+
+    # Case 2: Starts with local zero (e.g. 08031234567 in Nigeria -> +2348031234567)
+    if digits_only.startswith('0'):
+        return f"{country_prefix}{digits_only[1:]}"
+
+    # Case 3: Starts with country code digits directly without + (e.g. 2348031234567)
+    if country_digits and digits_only.startswith(country_digits):
+        return '+' + digits_only
+
+    # Case 4: 10 digits without leading 0 (e.g. 8031234567) -> prepend default country code
+    if len(digits_only) == 10:
+        return f"{country_prefix}{digits_only}"
+
+    # Default fallback: prepend default country prefix
+    return f"{country_prefix}{digits_only}"
+
+
+def _get_sms_setting(key, fallback_env=None):
+    """Fetches setting from DB, falling back to environment variables / config."""
+    setting = Setting.query.filter_by(key=key).first()
+    if setting and setting.value and setting.value.strip():
+        return setting.value.strip()
+    if fallback_env:
+        val = os.environ.get(fallback_env) or current_app.config.get(fallback_env)
+        if val:
+            return str(val).strip()
+    return ''
+
+
+def _get_twilio_client():
+    """Initializes Twilio client with validated credentials."""
+    account_sid = _get_sms_setting('twilio_account_sid', 'TWILIO_ACCOUNT_SID')
+    auth_token = _get_sms_setting('twilio_auth_token', 'TWILIO_AUTH_TOKEN')
+    from_number = _get_sms_setting('twilio_from_number', 'TWILIO_FROM_NUMBER') or _get_sms_setting('twilio_from_number', 'TWILIO_PHONE_NUMBER')
+    default_country_code = _get_sms_setting('twilio_default_country_code') or '+234'
+
+    if not account_sid or not auth_token or not from_number:
+        missing = []
+        if not account_sid:
+            missing.append('Account SID')
+        if not auth_token:
+            missing.append('Auth Token')
+        if not from_number:
+            missing.append('From Number')
+        return None, None, default_country_code, f"Missing Twilio configuration: {', '.join(missing)}."
+
+    try:
+        from twilio.rest import Client
+    except ImportError:
+        return None, None, default_country_code, "Twilio library is not installed on the server (pip install twilio)."
+
+    try:
+        client = Client(account_sid, auth_token)
+        return client, from_number, default_country_code, None
+    except Exception as exc:
+        return None, None, default_country_code, f"Failed to initialize Twilio client: {exc}"
+
+
+@admin.route('/sms')
+@login_required
+@admin_required
+def sms_broadcast():
+    from app.models.cms import ParentContact, SMSBroadcast
+    contacts = ParentContact.query.order_by(ParentContact.name).all()
+    broadcasts = SMSBroadcast.query.order_by(SMSBroadcast.created_at.desc()).limit(25).all()
+    sid = _get_sms_setting('twilio_account_sid', 'TWILIO_ACCOUNT_SID')
+    token = _get_sms_setting('twilio_auth_token', 'TWILIO_AUTH_TOKEN')
+    from_num = _get_sms_setting('twilio_from_number', 'TWILIO_FROM_NUMBER') or _get_sms_setting('twilio_from_number', 'TWILIO_PHONE_NUMBER')
+    country_code = _get_sms_setting('twilio_default_country_code') or '+234'
+    twilio_configured = bool(sid and token and from_num)
+
+    return render_template(
+        'admin/sms_broadcast.html',
+        contacts=contacts,
+        broadcasts=broadcasts,
+        twilio_configured=twilio_configured,
+        twilio_account_sid=sid,
+        twilio_auth_token=token,
+        twilio_from_number=from_num,
+        twilio_default_country_code=country_code
+    )
+
+
+@admin.route('/sms/save-config', methods=['POST'])
+@login_required
+@admin_required
+def sms_save_config():
+    for key in ['twilio_account_sid', 'twilio_auth_token', 'twilio_from_number', 'twilio_default_country_code']:
+        value = request.form.get(key, '').strip()
+        setting = Setting.query.filter_by(key=key).first()
+        if setting:
+            setting.value = value
+        else:
+            db.session.add(Setting(key=key, value=value))
+    db.session.commit()
+    flash('SMS configuration saved successfully.', 'success')
+    return redirect(url_for('admin.sms_broadcast'))
+
+
+@admin.route('/sms/test', methods=['POST'])
+@login_required
+@admin_required
+def sms_send_test():
+    test_phone = request.form.get('test_phone', '').strip()
+    test_message = request.form.get('test_message', '').strip() or 'This is a test SMS from your school management portal.'
+
+    if not test_phone:
+        flash('Please enter a destination phone number to test.', 'danger')
+        return redirect(url_for('admin.sms_broadcast'))
+
+    client, from_number, default_country, err = _get_twilio_client()
+    if err:
+        flash(f'SMS Test Error: {err}', 'danger')
+        return redirect(url_for('admin.sms_broadcast'))
+
+    normalized_to = _normalize_phone_number(test_phone, default_country)
+    if not normalized_to:
+        flash(f'Invalid test phone number: {test_phone}', 'danger')
+        return redirect(url_for('admin.sms_broadcast'))
+
+    try:
+        msg = client.messages.create(
+            body=test_message,
+            from_=from_number,
+            to=normalized_to
+        )
+        flash(f'✅ Test SMS sent successfully to {normalized_to}! Message SID: {msg.sid}', 'success')
+    except Exception as exc:
+        current_app.logger.error(f"Twilio test SMS failed to {normalized_to}: {exc}")
+        flash(f'❌ Twilio Test Failed: {exc}', 'danger')
+
+    return redirect(url_for('admin.sms_broadcast'))
+
+
+@admin.route('/sms/upload-contacts', methods=['POST'])
+@login_required
+@admin_required
+def sms_upload_contacts():
+    from app.models.cms import ParentContact
+    try:
+        import openpyxl
+    except ImportError:
+        flash('The openpyxl library is not installed. Run: pip install openpyxl', 'danger')
+        return redirect(url_for('admin.sms_broadcast'))
+
+    file = request.files.get('excel_file')
+    if not file or file.filename == '':
+        flash('Please select an Excel file to upload.', 'danger')
+        return redirect(url_for('admin.sms_broadcast'))
+
+    ext = os.path.splitext(secure_filename(file.filename))[1].lower()
+    if ext not in ('.xlsx', '.xls'):
+        flash('Invalid file format. Please upload a .xlsx or .xls Excel spreadsheet.', 'danger')
+        return redirect(url_for('admin.sms_broadcast'))
+
+    default_country = _get_sms_setting('twilio_default_country_code') or '+234'
+
+    try:
+        wb = openpyxl.load_workbook(file, data_only=True)
+        ws = wb.active
+
+        # Auto-detect column positions from row 1 headers
+        header_row = next(ws.iter_rows(min_row=1, max_row=1), None)
+        if not header_row:
+            flash('The uploaded Excel file appears to be empty.', 'danger')
+            return redirect(url_for('admin.sms_broadcast'))
+
+        raw_headers = [_clean_cell_value(cell.value).lower() for cell in header_row]
+
+        phone_col = name_col = grade_col = class_col = None
+        for i, h in enumerate(raw_headers):
+            if phone_col is None and any(k in h for k in ('phone', 'mobile', 'contact', 'tel', 'number', 'gsm')):
+                phone_col = i
+            elif name_col is None and any(k in h for k in ('name', 'parent', 'guardian', 'father', 'mother', 'fullname')):
+                name_col = i
+            elif grade_col is None and any(k in h for k in ('grade', 'level', 'stage', 'form')):
+                grade_col = i
+            elif class_col is None and any(k in h for k in ('class', 'section', 'arm', 'room')):
+                class_col = i
+
+        if phone_col is None:
+            flash(
+                'Could not locate a phone number column in the header row. '
+                'Please ensure your Excel sheet has a header row with a column named '
+                '"Phone", "Mobile", "Contact", "GSM", or "Number".',
+                'danger'
+            )
+            return redirect(url_for('admin.sms_broadcast'))
+
+        # Replace or append mode
+        if request.form.get('upload_mode') == 'replace':
+            ParentContact.query.delete()
+            db.session.flush()
+
+        added = 0
+        skipped = 0
+        for row in ws.iter_rows(min_row=2, values_only=True):
+            def _cell(col):
+                if col is not None and col < len(row):
+                    return _clean_cell_value(row[col])
+                return ''
+
+            phone_raw = _cell(phone_col)
+            normalized_phone = _normalize_phone_number(phone_raw, default_country)
+            if not normalized_phone:
+                skipped += 1
+                continue
+
+            name_val = _cell(name_col) or 'Parent'
+            grade_val = _cell(grade_col)
+            class_val = _cell(class_col)
+
+            db.session.add(ParentContact(
+                name=name_val,
+                phone=normalized_phone,
+                grade=grade_val,
+                class_name=class_val,
+            ))
+            added += 1
+
+        db.session.commit()
+        flash(f'✅ Successfully imported {added} contact(s). {skipped} invalid/blank row(s) skipped.', 'success')
+
+    except Exception as exc:
+        db.session.rollback()
+        current_app.logger.error(f"Error reading Excel contact file: {exc}")
+        flash(f'Error reading Excel file: {exc}', 'danger')
+
+    return redirect(url_for('admin.sms_broadcast'))
+
+
+@admin.route('/sms/send', methods=['POST'])
+@login_required
+@admin_required
+def sms_send_broadcast():
+    from app.models.cms import ParentContact, SMSBroadcast
+
+    message_text = request.form.get('message', '').strip()
+    if not message_text:
+        flash('SMS message body cannot be empty.', 'danger')
+        return redirect(url_for('admin.sms_broadcast'))
+
+    contacts = ParentContact.query.all()
+    if not contacts:
+        flash('No parent contacts found in database. Please upload an Excel contact file first.', 'warning')
+        return redirect(url_for('admin.sms_broadcast'))
+
+    client, from_number, default_country, err = _get_twilio_client()
+    if err:
+        flash(f'Twilio Error: {err}', 'danger')
+        return redirect(url_for('admin.sms_broadcast'))
+
+    sent = 0
+    failed = 0
+    error_samples = []
+
+    for contact in contacts:
+        target_phone = _normalize_phone_number(contact.phone, default_country) or contact.phone
+        try:
+            client.messages.create(
+                body=message_text,
+                from_=from_number,
+                to=target_phone
+            )
+            sent += 1
+        except Exception as exc:
+            failed += 1
+            err_msg = str(exc)
+            current_app.logger.error(f"Twilio SMS broadcast error for {contact.name} ({target_phone}): {err_msg}")
+            if len(error_samples) < 3:
+                error_samples.append(f"{target_phone}: {err_msg}")
+
+            # If it's a global credentials/auth error (e.g. HTTP 401), stop immediately to avoid hammering Twilio
+            if 'Authenticate' in err_msg or '20003' in err_msg or '21212' in err_msg:
+                break
+
+    error_summary = " | ".join(error_samples) if error_samples else None
+
+    broadcast = SMSBroadcast(
+        message=message_text,
+        total_recipients=len(contacts),
+        sent_count=sent,
+        failed_count=failed,
+        sent_by=current_user.username if current_user and current_user.is_authenticated else 'Admin',
+        error_details=error_summary
+    )
+    db.session.add(broadcast)
+    db.session.commit()
+
+    if failed == 0:
+        flash(f'✅ SMS Broadcast complete! Successfully delivered to all {sent} contact(s).', 'success')
+    elif sent > 0:
+        flash(f'⚠️ SMS Broadcast finished with partial failures — Sent: {sent} | Failed: {failed}. Details: {error_summary or "Check logs."}', 'warning')
+    else:
+        flash(f'❌ SMS Broadcast failed for all recipients. Reason: {error_summary or "Check Twilio credentials and recipient formats."}', 'danger')
+
+    return redirect(url_for('admin.sms_broadcast'))
+
+
+@admin.route('/sms/send-single', methods=['POST'])
+@login_required
+@admin_required
+def sms_send_single():
+    from app.models.cms import SMSBroadcast
+
+    phone = request.form.get('phone', '').strip()
+    recipient_name = request.form.get('recipient_name', '').strip()
+    message_text = request.form.get('message', '').strip()
+
+    if not phone:
+        flash('Please enter a recipient phone number.', 'danger')
+        return redirect(url_for('admin.sms_broadcast'))
+
+    if not message_text:
+        flash('SMS message body cannot be empty.', 'danger')
+        return redirect(url_for('admin.sms_broadcast'))
+
+    client, from_number, default_country, err = _get_twilio_client()
+    if err:
+        flash(f'Twilio Configuration Error: {err}', 'danger')
+        return redirect(url_for('admin.sms_broadcast'))
+
+    normalized_to = _normalize_phone_number(phone, default_country)
+    if not normalized_to:
+        flash(f'Invalid phone number format: {phone}', 'danger')
+        return redirect(url_for('admin.sms_broadcast'))
+
+    target_label = f"{recipient_name} ({normalized_to})" if recipient_name else normalized_to
+
+    try:
+        msg = client.messages.create(
+            body=message_text,
+            from_=from_number,
+            to=normalized_to
+        )
+
+        broadcast = SMSBroadcast(
+            message=f"[Single to {target_label}]: {message_text}",
+            total_recipients=1,
+            sent_count=1,
+            failed_count=0,
+            sent_by=current_user.username if current_user and current_user.is_authenticated else 'Admin',
+            error_details=None
+        )
+        db.session.add(broadcast)
+        db.session.commit()
+
+        flash(f'✅ SMS sent successfully to {target_label}! (Message SID: {msg.sid})', 'success')
+    except Exception as exc:
+        err_msg = str(exc)
+        current_app.logger.error(f"Twilio single SMS error to {target_label}: {err_msg}")
+
+        broadcast = SMSBroadcast(
+            message=f"[Single to {target_label}]: {message_text}",
+            total_recipients=1,
+            sent_count=0,
+            failed_count=1,
+            sent_by=current_user.username if current_user and current_user.is_authenticated else 'Admin',
+            error_details=err_msg
+        )
+        db.session.add(broadcast)
+        db.session.commit()
+
+        flash(f'❌ Failed to send SMS to {target_label}: {err_msg}', 'danger')
+
+    return redirect(url_for('admin.sms_broadcast'))
+
+
+@admin.route('/sms/add-contact', methods=['POST'])
+@login_required
+@admin_required
+def sms_add_contact():
+    from app.models.cms import ParentContact
+
+    name = request.form.get('name', '').strip() or 'Parent'
+    phone = request.form.get('phone', '').strip()
+    grade = request.form.get('grade', '').strip()
+    class_name = request.form.get('class_name', '').strip()
+
+    if not phone:
+        flash('Please enter a phone number.', 'danger')
+        return redirect(url_for('admin.sms_broadcast'))
+
+    default_country = _get_sms_setting('twilio_default_country_code') or '+234'
+    normalized_phone = _normalize_phone_number(phone, default_country)
+    if not normalized_phone:
+        flash(f'Invalid phone number format: {phone}', 'danger')
+        return redirect(url_for('admin.sms_broadcast'))
+
+    contact = ParentContact(
+        name=name,
+        phone=normalized_phone,
+        grade=grade,
+        class_name=class_name
+    )
+    db.session.add(contact)
+    db.session.commit()
+    flash(f'✅ Contact "{name}" ({normalized_phone}) added successfully.', 'success')
+    return redirect(url_for('admin.sms_broadcast'))
+
+
+@admin.route('/sms/delete-contact/<int:id>', methods=['POST'])
+@login_required
+@admin_required
+def sms_delete_contact(id):
+    from app.models.cms import ParentContact
+    contact = ParentContact.query.get_or_404(id)
+    name = contact.name
+    db.session.delete(contact)
+    db.session.commit()
+    flash(f'Contact "{name}" removed.', 'info')
+    return redirect(url_for('admin.sms_broadcast'))
+
+
+@admin.route('/sms/clear-contacts', methods=['POST'])
+@login_required
+@admin_required
+def sms_clear_contacts():
+    from app.models.cms import ParentContact
+    count = ParentContact.query.count()
+    ParentContact.query.delete()
+    db.session.commit()
+    flash(f'Cleared all {count} parent contact(s).', 'info')
+    return redirect(url_for('admin.sms_broadcast'))
+
+
+@admin.route('/sms/delete-broadcast/<int:id>', methods=['POST'])
+@login_required
+@admin_required
+def sms_delete_broadcast(id):
+    from app.models.cms import SMSBroadcast
+    broadcast = SMSBroadcast.query.get_or_404(id)
+    db.session.delete(broadcast)
+    db.session.commit()
+    flash('Broadcast log record deleted.', 'info')
+    return redirect(url_for('admin.sms_broadcast'))
+
+
+@admin.route('/sms/clear-broadcasts', methods=['POST'])
+@login_required
+@admin_required
+def sms_clear_broadcasts():
+    from app.models.cms import SMSBroadcast
+    count = SMSBroadcast.query.count()
+    SMSBroadcast.query.delete()
+    db.session.commit()
+    flash(f'Cleared all {count} broadcast log record(s).', 'info')
+    return redirect(url_for('admin.sms_broadcast'))
+
+
 
 

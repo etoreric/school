@@ -187,6 +187,7 @@ html {
     transform: translateY(0);
 }
 
+
 .hover-card {
     transition: var(--transition-smooth);
 }

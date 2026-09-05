@@ -43,6 +43,8 @@ def index():
 
 @main.route('/page/<slug>')
 def page(slug):
+    if slug == 'contact':
+        return redirect(url_for('main.contact'))
     page_data = Page.query.filter_by(slug=slug, is_published=True).first_or_404()
     return render_template('main/page.html', page=page_data)
 
@@ -91,7 +93,8 @@ def file_download(download_id):
 @main.route('/contact', methods=['GET', 'POST'])
 def contact():
     from app.forms.site import ContactForm
-    from app.models.cms import ContactMessage
+    from app.models.cms import ContactMessage, Page
+    page_data = Page.query.filter_by(slug='contact', is_published=True).first()
     form = ContactForm()
     if request.method == 'POST':
         # Accept both form object validation and manual POST payload (from homepage)
@@ -114,7 +117,7 @@ def contact():
             flash('Thank you for your message! We will get back to you shortly.', 'success')
             return redirect(url_for('main.contact'))
 
-    return render_template('main/contact.html', form=form)
+    return render_template('main/contact.html', form=form, page=page_data)
 
 @main.route('/gallery')
 def gallery():

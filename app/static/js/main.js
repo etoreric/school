@@ -55,6 +55,7 @@ document.addEventListener('DOMContentLoaded', () => {
         revealObserver.observe(el);
     });
 
+
     // 3. Simple Image/Video/Audio Previewer / Gallery lightbox Modal helper
     const galleryItems = document.querySelectorAll('.gallery-thumb');
 

@@ -4,7 +4,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // 1. Dashboard Analytics Chart (via Chart.js)
     const ctx = document.getElementById('dashboardChart');
     if (ctx) {
-        fetch('/api/analytics/dashboard-metrics')
+        fetch('/admin/api/analytics/dashboard-metrics')
             .then(res => res.json())
             .then(data => {
                 new Chart(ctx, {
@@ -36,29 +36,7 @@ document.addEventListener('DOMContentLoaded', () => {
             .catch(err => console.error("Error loading metrics: ", err));
     }
 
-    // 2. Mark notifications as read
-    const notifBell = document.getElementById('notifBell');
-    if (notifBell) {
-        notifBell.addEventListener('click', () => {
-            const token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-            fetch('/api/notifications/mark-read', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': token
-                }
-            })
-            .then(res => res.json())
-            .then(data => {
-                if (data.success) {
-                    const badge = notifBell.querySelector('.notif-badge');
-                    if (badge) badge.remove();
-                }
-            });
-        });
-    }
-
-    // 3. Drag and Drop Layout Reordering (HTML5 Drag & Drop)
+    // 2. Drag and Drop Layout Reordering (HTML5 Drag & Drop)
     const listContainer = document.getElementById('section-list-container');
     if (listContainer) {
         let draggedItem = null;
@@ -95,7 +73,7 @@ document.addEventListener('DOMContentLoaded', () => {
             });
 
             const token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-            fetch('/api/sections/reorder', {
+            fetch('/admin/api/sections/reorder', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -114,7 +92,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // 4. Drag & Drop File Upload Dropzone in Media Manager
+    // 3. Drag & Drop File Upload Dropzone in Media Manager
     const dropzone = document.getElementById('dropzone');
     if (dropzone) {
         const fileInput = document.getElementById('file-upload-input');
@@ -162,7 +140,7 @@ document.addEventListener('DOMContentLoaded', () => {
             
             dropzone.innerHTML = `<div class="text-center"><i class="fas fa-spinner fa-spin fa-2x mb-2 text-primary"></i><p class="m-0">Uploading file...</p></div>`;
 
-            fetch('/api/media/upload', {
+            fetch('/admin/media/upload', {
                 method: 'POST',
                 headers: {
                     'X-CSRFToken': token

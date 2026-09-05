@@ -23,3 +23,19 @@ class ChangePasswordForm(FlaskForm):
 class Setup2FAForm(FlaskForm):
     code = StringField('Verification Code', validators=[DataRequired(), Length(6, 6)])
     submit = SubmitField('Verify')
+
+class ResetPasswordRequestForm(FlaskForm):
+    email_or_username = StringField('Email Address or Username', validators=[DataRequired(), Length(1, 120)])
+    submit = SubmitField('Send Password Reset Link')
+
+class ResetPasswordForm(FlaskForm):
+    password = PasswordField('New Password', validators=[
+        DataRequired(),
+        Length(min=6, message="Password must be at least 6 characters long.")
+    ])
+    confirm_password = PasswordField('Confirm New Password', validators=[
+        DataRequired(),
+        EqualTo('password', message='Passwords must match.')
+    ])
+    submit = SubmitField('Reset Password')
+

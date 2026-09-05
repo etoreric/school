@@ -1,0 +1,510 @@
+{% extends "admin/base.html" %}
+{% block title %}SMS Broadcast & Twilio{% endblock %}
+
+{% block admin_content %}
+<div class="mb-4 d-flex align-items-center justify-content-between flex-wrap gap-3">
+    <div>
+        <h4 class="fw-bold m-0 text-dark"><i class="fa-solid fa-comment-sms me-2 text-primary"></i>SMS Messaging &amp; Broadcast</h4>
+        <p class="text-muted mb-0 mt-1">Send individual SMS messages, upload contact lists, and broadcast bulk announcements to parents.</p>
+    </div>
+    <div class="d-flex align-items-center gap-2">
+        {% if twilio_configured %}
+            <span class="badge bg-success-subtle text-success border border-success-subtle px-3 py-2">
+                <i class="fa-solid fa-circle-check me-1"></i>Twilio Configured
+            </span>
+        {% else %}
+            <span class="badge bg-warning-subtle text-warning border border-warning-subtle px-3 py-2">
+                <i class="fa-solid fa-triangle-exclamation me-1"></i>Twilio Setup Needed
+            </span>
+        {% endif %}
+        <span class="badge bg-primary fs-6 px-3 py-2">
+            <i class="fa-solid fa-users me-1"></i>{{ contacts|length }} Contact{{ 's' if contacts|length != 1 else '' }}
+        </span>
+    </div>
+</div>
+
+<div class="row g-4">
+
+    <!-- LEFT COLUMN: Contact Management (Single & Excel) -->
+    <div class="col-xl-6">
+
+        <!-- 1. Add Single Contact / Excel Upload -->
+        <div class="table-card p-4 mb-4">
+            <div class="d-flex align-items-center justify-content-between border-bottom pb-2 mb-3">
+                <h5 class="fw-bold m-0 text-primary">
+                    <i class="fa-solid fa-address-book me-2"></i>Contact Management
+                </h5>
+                {% if contacts %}
+                <form action="{{ url_for('admin.sms_clear_contacts') }}" method="POST" class="d-inline"
+                      onsubmit="return confirm('Are you sure you want to clear ALL {{ contacts|length }} parent contacts?')">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="btn btn-outline-danger btn-sm rounded-2">
+                        <i class="fa-solid fa-trash-can me-1"></i>Clear All Contacts
+                    </button>
+                </form>
+                {% endif %}
+            </div>
+
+            <!-- Contact Input Method Tabs -->
+            <ul class="nav nav-pills mb-3 gap-2" id="contactTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active rounded-3 py-2 px-3 fw-semibold" id="single-contact-tab" data-bs-toggle="pill" data-bs-target="#singleContactPane" type="button" role="tab">
+                        <i class="fa-solid fa-user-plus me-1"></i>Add Single Contact
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link rounded-3 py-2 px-3 fw-semibold" id="excel-upload-tab" data-bs-toggle="pill" data-bs-target="#excelUploadPane" type="button" role="tab">
+                        <i class="fa-solid fa-file-excel me-1"></i>Import Excel Sheet
+                    </button>
+                </li>
+            </ul>
+
+            <div class="tab-content" id="contactTabsContent">
+                <!-- Add Single Contact Form -->
+                <div class="tab-pane fade show active" id="singleContactPane" role="tabpanel">
+                    <form action="{{ url_for('admin.sms_add_contact') }}" method="POST">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <div class="row g-2 mb-2">
+                            <div class="col-md-6">
+                                <label class="form-label text-muted small fw-bold mb-1">Contact Name</label>
+                                <input type="text" name="name" class="form-control bg-light border-0 rounded-3" placeholder="e.g. John Doe / Parent" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label text-muted small fw-bold mb-1">Phone Number</label>
+                                <input type="text" name="phone" class="form-control bg-light border-0 rounded-3" placeholder="e.g. 08012345678 or +2348012345678" required>
+                            </div>
+                        </div>
+                        <div class="row g-2 mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label text-muted small fw-bold mb-1">Grade / Level (Optional)</label>
+                                <input type="text" name="grade" class="form-control bg-light border-0 rounded-3" placeholder="e.g. Grade 10 / SS2">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label text-muted small fw-bold mb-1">Class / Section (Optional)</label>
+                                <input type="text" name="class_name" class="form-control bg-light border-0 rounded-3" placeholder="e.g. Science A / Gold">
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-outline-primary w-100 rounded-3 fw-semibold">
+                            <i class="fa-solid fa-user-plus me-1"></i>Save Contact to Directory
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Excel Import Pane -->
+                <div class="tab-pane fade" id="excelUploadPane" role="tabpanel">
+                    <div class="alert alert-info border-0 d-flex gap-3 align-items-start mb-3 py-2 small">
+                        <i class="fa-solid fa-circle-info mt-1 text-info"></i>
+                        <div>
+                            Must include header row with column names like <code>Name</code>, <code>Phone</code>/<code>Mobile</code>/<code>Contact</code>, <code>Grade</code>, <code>Class</code>.
+                        </div>
+                    </div>
+
+                    <form action="{{ url_for('admin.sms_upload_contacts') }}" method="POST" enctype="multipart/form-data" id="uploadForm">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        
+                        <div id="dropZone" class="rounded-3 text-center p-3 mb-3"
+                             style="border: 2px dashed #cbd5e1; cursor: pointer; transition: all 0.2s ease; background: #f8fafc;">
+                            <i class="fa-solid fa-cloud-arrow-up fa-2x text-primary mb-1 d-block"></i>
+                            <p class="mb-1 fw-semibold text-dark small">Drag &amp; drop Excel spreadsheet here</p>
+                            <input type="file" name="excel_file" id="excelFile" accept=".xlsx,.xls" class="d-none">
+                            <button type="button" class="btn btn-outline-primary btn-sm rounded-3 px-3"
+                                    onclick="document.getElementById('excelFile').click()">
+                                <i class="fa-solid fa-folder-open me-1"></i>Choose Excel File
+                            </button>
+                            <p id="fileName" class="mt-2 text-primary fw-semibold small mb-0"></p>
+                        </div>
+
+                        <div class="d-flex align-items-center justify-content-between gap-2 flex-wrap">
+                            <div class="form-check form-switch mb-0">
+                                <input class="form-check-input" type="checkbox" name="upload_mode" value="replace"
+                                       id="replaceMode" {% if contacts %}checked{% endif %}>
+                                <label class="form-check-label text-muted small" for="replaceMode">
+                                    Replace existing contacts
+                                </label>
+                            </div>
+                            <button type="submit" class="btn btn-primary btn-sm rounded-3 px-3 fw-semibold">
+                                <i class="fa-solid fa-file-import me-1"></i>Import Excel
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. Contacts Directory Table -->
+        <div class="table-card p-4 mb-4">
+            <h5 class="fw-bold border-bottom pb-2 mb-3 text-primary d-flex align-items-center justify-content-between">
+                <span>
+                    <i class="fa-solid fa-users me-2"></i>Loaded Directory
+                    <span class="badge bg-light text-primary border ms-2">{{ contacts|length }}</span>
+                </span>
+                <small class="text-muted fw-normal" style="font-size: 0.8rem;">Click <i class="fa-solid fa-paper-plane text-primary"></i> to quickly compose single SMS</small>
+            </h5>
+            {% if contacts %}
+                <div style="max-height: 440px; overflow-y: auto;">
+                    <table class="table table-sm table-hover align-middle mb-0">
+                        <thead class="table-light sticky-top">
+                            <tr>
+                                <th>#</th>
+                                <th>Name</th>
+                                <th>Phone (E.164)</th>
+                                <th>Grade/Class</th>
+                                <th class="text-end">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for c in contacts %}
+                            <tr>
+                                <td class="text-muted small">{{ loop.index }}</td>
+                                <td class="fw-semibold text-dark">{{ c.name }}</td>
+                                <td><code class="text-primary">{{ c.phone }}</code></td>
+                                <td class="small text-muted">{{ c.grade }}{% if c.grade and c.class_name %} - {% endif %}{{ c.class_name }}</td>
+                                <td class="text-end">
+                                    <div class="d-inline-flex gap-1">
+                                        <button type="button" class="btn btn-sm btn-outline-primary rounded-2 py-0 px-2"
+                                                onclick="fillSingleSMS('{{ c.phone }}', '{{ c.name }}')"
+                                                title="Send single SMS to {{ c.name }}">
+                                            <i class="fa-solid fa-paper-plane"></i>
+                                        </button>
+                                        <form action="{{ url_for('admin.sms_delete_contact', id=c.id) }}" method="POST"
+                                              onsubmit="return confirm('Remove {{ c.name }}?')" class="d-inline">
+                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                            <button type="submit" class="btn btn-sm btn-outline-danger rounded-2 py-0 px-2" title="Remove contact">
+                                                <i class="fa-solid fa-xmark"></i>
+                                            </button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="text-center py-5 text-muted">
+                    <i class="fa-regular fa-address-book fa-3x mb-3 d-block text-secondary"></i>
+                    No contacts loaded yet. Add a single contact above or upload an Excel file.
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- RIGHT COLUMN: Send SMS (Single or Bulk) & Twilio Config -->
+    <div class="col-xl-6">
+
+        <!-- 3. Send SMS Module (Single Direct SMS vs Bulk Broadcast) -->
+        <div class="table-card p-4 mb-4">
+            <h5 class="fw-bold border-bottom pb-2 mb-3 text-primary">
+                <i class="fa-solid fa-paper-plane me-2"></i>Compose &amp; Send SMS
+            </h5>
+
+            {% if not twilio_configured %}
+            <div class="alert alert-warning border-0 mb-3 py-2 small">
+                <i class="fa-solid fa-triangle-exclamation me-1"></i>
+                Twilio credentials are not configured yet. Configure below to enable sending.
+            </div>
+            {% endif %}
+
+            <!-- Message Mode Tabs -->
+            <ul class="nav nav-tabs mb-4" id="smsSendTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active fw-bold text-dark" id="single-sms-tab" data-bs-toggle="tab" data-bs-target="#singleSmsPane" type="button" role="tab">
+                        <i class="fa-solid fa-mobile-screen me-1 text-primary"></i>Single Contact SMS
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link fw-bold text-dark" id="bulk-sms-tab" data-bs-toggle="tab" data-bs-target="#bulkSmsPane" type="button" role="tab">
+                        <i class="fa-solid fa-bullhorn me-1 text-primary"></i>Bulk Broadcast ({{ contacts|length }})
+                    </button>
+                </li>
+            </ul>
+
+            <div class="tab-content" id="smsSendTabsContent">
+                
+                <!-- TAB A: SINGLE CONTACT SMS -->
+                <div class="tab-pane fade show active" id="singleSmsPane" role="tabpanel">
+                    <form action="{{ url_for('admin.sms_send_single') }}" method="POST" onsubmit="return confirmSingleSend()">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        
+                        <div class="row g-2 mb-3">
+                            <div class="col-md-7">
+                                <label class="form-label fw-bold text-muted small mb-1">
+                                    RECIPIENT PHONE NUMBER <span class="text-danger">*</span>
+                                </label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light border-0 text-muted"><i class="fa-solid fa-phone"></i></span>
+                                    <input type="text" name="phone" id="singlePhoneInput" class="form-control border-0 bg-light rounded-end-3 p-3"
+                                           placeholder="e.g. 08012345678 or +2348012345678" required>
+                                </div>
+                                <small class="text-muted" style="font-size: 0.75rem;">Local numbers are automatically formatted with country code ({{ twilio_default_country_code or '+234' }}).</small>
+                            </div>
+                            <div class="col-md-5">
+                                <label class="form-label fw-bold text-muted small mb-1">
+                                    RECIPIENT NAME <span class="text-muted fw-normal">(Optional)</span>
+                                </label>
+                                <input type="text" name="recipient_name" id="singleNameInput" class="form-control border-0 bg-light rounded-3 p-3"
+                                       placeholder="e.g. Mr. David">
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold text-muted small mb-1">SMS MESSAGE BODY <span class="text-danger">*</span></label>
+                            <textarea name="message" id="singleMessage" rows="4" maxlength="1600"
+                                      class="form-control border-0 bg-light rounded-3 p-3"
+                                      placeholder="Type your SMS message here..." required
+                                      oninput="updateSingleCounter()"></textarea>
+                            <div class="d-flex justify-content-between mt-1">
+                                <small class="text-muted">Standard SMS is 160 characters.</small>
+                                <small id="singleCharCounter" class="text-muted fw-semibold">0 / 160</small>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary w-100 rounded-3 py-3 fw-bold shadow-sm"
+                                {% if not twilio_configured %}disabled title="Twilio configuration required"{% endif %}>
+                            <i class="fa-solid fa-paper-plane me-2"></i>Send Direct SMS
+                        </button>
+                    </form>
+                </div>
+
+                <!-- TAB B: BULK BROADCAST -->
+                <div class="tab-pane fade" id="bulkSmsPane" role="tabpanel">
+                    <form action="{{ url_for('admin.sms_send_broadcast') }}" method="POST" onsubmit="return confirmBulkSend()">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        
+                        <div class="mb-3">
+                            <label class="form-label fw-bold text-muted small mb-1">BROADCAST MESSAGE BODY <span class="text-danger">*</span></label>
+                            <textarea name="message" id="smsMessage" rows="5" maxlength="1600"
+                                      class="form-control border-0 bg-light rounded-3 p-3"
+                                      placeholder="Type announcement message for all parents here..." required
+                                      oninput="updateCounter()"></textarea>
+                            <div class="d-flex justify-content-between mt-1">
+                                <small class="text-muted">Standard SMS is 160 characters.</small>
+                                <small id="charCounter" class="text-muted fw-semibold">0 / 160</small>
+                            </div>
+                        </div>
+
+                        <div class="alert alert-light border mb-4 py-2 px-3 d-flex align-items-center gap-2">
+                            <i class="fa-solid fa-users text-primary"></i>
+                            <span>Sending to all <strong>{{ contacts|length }}</strong> parent contact{{ 's' if contacts|length != 1 else '' }}.</span>
+                        </div>
+
+                        <button type="submit" class="btn btn-success w-100 rounded-3 py-3 fw-bold shadow-sm"
+                                {% if not contacts or not twilio_configured %}disabled title="Twilio configuration and contacts required"{% endif %}>
+                            <i class="fa-solid fa-bullhorn me-2"></i>Send Broadcast to All {{ contacts|length }} Parents
+                        </button>
+                    </form>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- 4. Twilio Config & Quick Test -->
+        <div class="table-card p-4 mb-4">
+            <div class="d-flex align-items-center justify-content-between border-bottom pb-2 mb-3">
+                <h5 class="fw-bold m-0 text-primary">
+                    <i class="fa-solid fa-gear me-2"></i>Twilio SMS Configuration
+                </h5>
+                <button class="btn btn-sm btn-outline-secondary rounded-2" type="button" data-bs-toggle="collapse" data-bs-target="#twilioConfig">
+                    <i class="fa-solid fa-sliders me-1"></i>Toggle
+                </button>
+            </div>
+            
+            <div class="collapse {% if not twilio_configured %}show{% endif %}" id="twilioConfig">
+                <form action="{{ url_for('admin.sms_save_config') }}" method="POST">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <div class="mb-3">
+                        <label class="form-label text-muted fw-bold small">Twilio Account SID</label>
+                        <input type="text" name="twilio_account_sid" class="form-control bg-light border-0 rounded-3"
+                               value="{{ twilio_account_sid or get_setting('twilio_account_sid') }}"
+                               placeholder="ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label text-muted fw-bold small">Twilio Auth Token</label>
+                        <input type="password" name="twilio_auth_token" class="form-control bg-light border-0 rounded-3"
+                               value="{{ twilio_auth_token or get_setting('twilio_auth_token') }}"
+                               placeholder="Your Twilio Auth Token" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label text-muted fw-bold small">Twilio Sender Number / ID</label>
+                        <input type="text" name="twilio_from_number" class="form-control bg-light border-0 rounded-3"
+                               value="{{ twilio_from_number or get_setting('twilio_from_number') }}"
+                               placeholder="+1234567890" required>
+                        <small class="text-muted">Purchased Twilio number in E.164 format (e.g. +1234567890) or Sender ID.</small>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label text-muted fw-bold small">Default Country Code (for local numbers)</label>
+                        <input type="text" name="twilio_default_country_code" class="form-control bg-light border-0 rounded-3"
+                               value="{{ twilio_default_country_code or get_setting('twilio_default_country_code', '+234') }}"
+                               placeholder="+234">
+                        <small class="text-muted">Local numbers starting with 0 will be prefixed with this code (e.g. +234).</small>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100 rounded-3 mb-3">
+                        <i class="fa-solid fa-floppy-disk me-2"></i>Save Configuration
+                    </button>
+                </form>
+
+                <!-- Quick SMS Test -->
+                <div class="border-top pt-3 mt-3">
+                    <h6 class="fw-bold text-dark mb-2"><i class="fa-solid fa-vial-circle-check me-2 text-info"></i>Test Twilio Connection</h6>
+                    <p class="text-muted small mb-3">Send a single instant test SMS to confirm your Twilio credentials and phone formatting work.</p>
+                    <form action="{{ url_for('admin.sms_send_test') }}" method="POST">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <div class="mb-2">
+                            <input type="text" name="test_phone" class="form-control form-control-sm bg-light border-0 rounded-3"
+                                   placeholder="Recipient phone (e.g. +2348012345678 or 08012345678)" required>
+                        </div>
+                        <div class="mb-2">
+                            <input type="text" name="test_message" class="form-control form-control-sm bg-light border-0 rounded-3"
+                                   placeholder="Test message body" value="Sunny School SMS Test - Twilio connection successful!">
+                        </div>
+                        <button type="submit" class="btn btn-outline-info btn-sm w-100 rounded-3"
+                                {% if not twilio_configured %}disabled{% endif %}>
+                            <i class="fa-solid fa-paper-plane me-1"></i>Send Test SMS
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- 5. Message & Broadcast History -->
+        <div class="table-card p-4">
+            <div class="d-flex align-items-center justify-content-between border-bottom pb-2 mb-3">
+                <h5 class="fw-bold m-0 text-primary">
+                    <i class="fa-solid fa-clock-rotate-left me-2"></i>Message &amp; Broadcast History
+                </h5>
+                {% if broadcasts %}
+                <form action="{{ url_for('admin.sms_clear_broadcasts') }}" method="POST" class="d-inline"
+                      onsubmit="return confirm('Are you sure you want to clear ALL broadcast history records?')">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="btn btn-outline-danger btn-sm rounded-2 py-0 px-2" title="Clear all broadcast history">
+                        <i class="fa-solid fa-trash-can me-1"></i>Clear History
+                    </button>
+                </form>
+                {% endif %}
+            </div>
+            {% if broadcasts %}
+                <div style="max-height: 400px; overflow-y: auto;">
+                    {% for b in broadcasts %}
+                    <div class="border rounded-3 p-3 mb-3 bg-light">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <div>
+                                <span class="badge bg-success me-1">Sent: {{ b.sent_count }}</span>
+                                {% if b.failed_count > 0 %}
+                                    <span class="badge bg-danger">Failed: {{ b.failed_count }}</span>
+                                {% endif %}
+                                <span class="text-muted small ms-1">/ {{ b.total_recipients }} recipient{{ 's' if b.total_recipients != 1 else '' }}</span>
+                            </div>
+                            <div class="d-flex align-items-center gap-2">
+                                <small class="text-muted">{{ b.created_at.strftime('%b %d, %H:%M') }}</small>
+                                <form action="{{ url_for('admin.sms_delete_broadcast', id=b.id) }}" method="POST"
+                                      onsubmit="return confirm('Delete this log entry?')" class="d-inline">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <button type="submit" class="btn btn-sm btn-outline-danger rounded-2 py-0 px-2" title="Delete entry">
+                                        <i class="fa-solid fa-xmark"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                        <p class="mb-2 small text-dark" style="white-space: pre-wrap;">{{ b.message[:200] }}{% if b.message|length > 200 %}...{% endif %}</p>
+                        {% if b.error_details %}
+                        <div class="alert alert-danger py-1 px-2 mb-2 small" style="font-size: 0.78rem;">
+                            <strong>Error Details:</strong> {{ b.error_details }}
+                        </div>
+                        {% endif %}
+                        <small class="text-muted"><i class="fa-solid fa-user me-1"></i>{{ b.sent_by or 'Admin' }}</small>
+                    </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="text-center py-4 text-muted">
+                    <i class="fa-regular fa-clock fa-2x mb-2 d-block text-secondary"></i>
+                    No messages or broadcasts sent yet.
+                </div>
+            {% endif %}
+        </div>
+
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function () {
+    const zone  = document.getElementById('dropZone');
+    const input = document.getElementById('excelFile');
+    const label = document.getElementById('fileName');
+
+    if (!zone || !input) return;
+
+    function setFile(file) {
+        if (!file) return;
+        const dt = new DataTransfer();
+        dt.items.add(file);
+        input.files = dt.files;
+        label.textContent = 'Selected: ' + file.name;
+        zone.style.borderColor = '#2563eb';
+        zone.style.background  = 'rgba(37,99,235,0.04)';
+    }
+
+    input.addEventListener('change', () => { if (input.files[0]) setFile(input.files[0]); });
+
+    zone.addEventListener('dragover',  (e) => { e.preventDefault(); zone.style.borderColor = '#2563eb'; zone.style.background = 'rgba(37,99,235,0.06)'; });
+    zone.addEventListener('dragleave', ()  => { zone.style.borderColor = '#cbd5e1'; zone.style.background = '#f8fafc'; });
+    zone.addEventListener('drop',      (e) => { e.preventDefault(); if (e.dataTransfer.files[0]) setFile(e.dataTransfer.files[0]); });
+})();
+
+function updateSingleCounter() {
+    const ta  = document.getElementById('singleMessage');
+    const cnt = document.getElementById('singleCharCounter');
+    if (!ta || !cnt) return;
+    const len = ta.value.length;
+    const parts = Math.ceil(len / 160) || 1;
+    cnt.textContent = len + ' / 160' + (parts > 1 ? '  (' + parts + ' SMS parts)' : '');
+    cnt.className   = 'fw-semibold small ' + (len > 160 ? 'text-warning' : 'text-muted');
+}
+
+function updateCounter() {
+    const ta  = document.getElementById('smsMessage');
+    const cnt = document.getElementById('charCounter');
+    if (!ta || !cnt) return;
+    const len = ta.value.length;
+    const parts = Math.ceil(len / 160) || 1;
+    cnt.textContent = len + ' / 160' + (parts > 1 ? '  (' + parts + ' SMS parts)' : '');
+    cnt.className   = 'fw-semibold small ' + (len > 160 ? 'text-warning' : 'text-muted');
+}
+
+function confirmSingleSend() {
+    const phone = document.getElementById('singlePhoneInput').value.trim();
+    const msg   = document.getElementById('singleMessage').value.trim();
+    if (!phone) { alert('Please enter a recipient phone number.'); return false; }
+    if (!msg)   { alert('Please enter an SMS message body.'); return false; }
+    return confirm('Send direct SMS to ' + phone + '?\n\nMessage preview:\n' + msg.substring(0, 120) + (msg.length > 120 ? '...' : ''));
+}
+
+function confirmBulkSend() {
+    const count = {{ contacts|length }};
+    const msgEl = document.getElementById('smsMessage');
+    const msg   = msgEl ? msgEl.value.trim() : '';
+    if (!msg)   { alert('Please enter an SMS message body first.'); return false; }
+    if (!count) { alert('No contacts loaded. Please add or upload contacts first.'); return false; }
+    return confirm('Send SMS broadcast to ' + count + ' parent contact' + (count !== 1 ? 's' : '') + '?\n\nPreview:\n' + msg.substring(0, 120) + (msg.length > 120 ? '...' : ''));
+}
+
+function fillSingleSMS(phone, name) {
+    const tabEl = document.getElementById('single-sms-tab');
+    if (tabEl) {
+        const tab = new bootstrap.Tab(tabEl);
+        tab.show();
+    }
+    const phoneInput = document.getElementById('singlePhoneInput');
+    const nameInput = document.getElementById('singleNameInput');
+    const msgInput = document.getElementById('singleMessage');
+    if (phoneInput) phoneInput.value = phone;
+    if (nameInput) nameInput.value = name || '';
+    if (msgInput) {
+        msgInput.focus();
+        msgInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+}
+</script>
+{% endblock %}

@@ -7,7 +7,9 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     
     <!-- favicon -->
-    <link rel="icon" href="{{ get_setting('favicon_url', '/static/favicon.ico') }}">
+    {% if get_setting('favicon_url') %}
+        <link rel="icon" href="{{ get_setting('favicon_url') }}">
+    {% endif %}
 
     <!-- CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -33,96 +35,115 @@
                 </a>
             </li>
             
-            {% if current_user.can('manage_pages') %}
-                <li class="nav-menu-item {% if '/admin/pages' in request.path %}active{% endif %}">
-                    <a href="{{ url_for('admin.list_pages') }}" class="nav-menu-link">
-                        <i class="fa-solid fa-file-invoice"></i>
-                        <span>Manage Pages</span>
+            {% if current_user.can('manage_pages') or current_user.can('manage_news') or current_user.can('manage_events') %}
+                <li class="nav-menu-item dropdown {% if '/admin/pages' in request.path or '/admin/posts' in request.path or '/admin/categories' in request.path or '/admin/events' in request.path %}active{% endif %}">
+                    <a class="nav-menu-link dropdown-toggle d-flex align-items-center justify-content-between" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        <div class="d-flex align-items-center gap-2">
+                            <i class="fa-solid fa-newspaper"></i>
+                            <span>Content &amp; Events</span>
+                        </div>
                     </a>
+                    <ul class="dropdown-menu border-0 shadow-lg p-2 rounded-3" style="background: #1e293b; min-width: 220px;">
+                        {% if current_user.can('manage_pages') %}
+                        <li>
+                            <a class="dropdown-item text-white-50 rounded-2 py-2 px-3 d-flex align-items-center gap-2 {% if '/admin/pages' in request.path %}active bg-primary text-white{% endif %}" href="{{ url_for('admin.list_pages') }}">
+                                <i class="fa-solid fa-file-invoice text-primary"></i>
+                                <span>Manage Static Pages</span>
+                            </a>
+                        </li>
+                        {% endif %}
+                        {% if current_user.can('manage_news') %}
+                        <li>
+                            <a class="dropdown-item text-white-50 rounded-2 py-2 px-3 d-flex align-items-center gap-2 {% if '/admin/posts' in request.path or '/admin/categories' in request.path %}active bg-primary text-white{% endif %}" href="{{ url_for('admin.list_posts') }}">
+                                <i class="fa-solid fa-newspaper text-primary"></i>
+                                <span>News Articles</span>
+                            </a>
+                        </li>
+                        {% endif %}
+                        {% if current_user.can('manage_events') %}
+                        <li>
+                            <a class="dropdown-item text-white-50 rounded-2 py-2 px-3 d-flex align-items-center gap-2 {% if '/admin/events' in request.path %}active bg-primary text-white{% endif %}" href="{{ url_for('admin.list_events') }}">
+                                <i class="fa-solid fa-calendar-days text-primary"></i>
+                                <span>Events Calendar</span>
+                            </a>
+                        </li>
+                        {% endif %}
+                    </ul>
                 </li>
             {% endif %}
             
-            {% if current_user.can('manage_news') %}
-                <li class="nav-menu-item {% if '/admin/posts' in request.path or '/admin/categories' in request.path %}active{% endif %}">
-                    <a href="{{ url_for('admin.list_posts') }}" class="nav-menu-link">
-                        <i class="fa-solid fa-newspaper"></i>
-                        <span>News Articles</span>
+            {% if current_user.can('manage_downloads') or current_user.can('manage_settings') %}
+                <li class="nav-menu-item dropdown {% if '/admin/downloads' in request.path or '/admin/media' in request.path or '/admin/upload' in request.path %}active{% endif %}">
+                    <a class="nav-menu-link dropdown-toggle d-flex align-items-center justify-content-between" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        <div class="d-flex align-items-center gap-2">
+                            <i class="fa-solid fa-cloud-arrow-up"></i>
+                            <span>Upload</span>
+                        </div>
                     </a>
+                    <ul class="dropdown-menu border-0 shadow-lg p-2 rounded-3" style="background: #1e293b; min-width: 200px;">
+                        <li>
+                            <a class="dropdown-item text-white-50 rounded-2 py-2 px-3 d-flex align-items-center gap-2 {% if '/admin/media' in request.path %}active bg-primary text-white{% endif %}" href="{{ url_for('admin.list_media') }}">
+                                <i class="fa-solid fa-photo-film text-primary"></i>
+                                <span>Media Manager</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item text-white-50 rounded-2 py-2 px-3 d-flex align-items-center gap-2 {% if '/admin/downloads' in request.path %}active bg-primary text-white{% endif %}" href="{{ url_for('admin.list_downloads') }}">
+                                <i class="fa-solid fa-cloud-arrow-down text-primary"></i>
+                                <span>Upload Center</span>
+                            </a>
+                        </li>
+                    </ul>
                 </li>
             {% endif %}
-            
-            {% if current_user.can('manage_events') %}
-                <li class="nav-menu-item {% if '/admin/events' in request.path %}active{% endif %}">
-                    <a href="{{ url_for('admin.list_events') }}" class="nav-menu-link">
-                        <i class="fa-solid fa-calendar-days"></i>
-                        <span>Events Calendar</span>
-                    </a>
-                </li>
-            {% endif %}
-            
-            {% if current_user.can('manage_downloads') %}
-                <li class="nav-menu-item {% if '/admin/downloads' in request.path %}active{% endif %}">
-                    <a href="{{ url_for('admin.list_downloads') }}" class="nav-menu-link">
-                        <i class="fa-solid fa-cloud-arrow-down"></i>
-                        <span>Upload Center</span>
-                    </a>
-                </li>
-            {% endif %}
-            
-            
             
             {% if current_user.can('manage_messages') %}
-                <li class="nav-menu-item {% if '/admin/inbox' in request.path %}active{% endif %}">
-                    <a href="{{ url_for('admin.inbox') }}" class="nav-menu-link">
-                        <i class="fa-solid fa-envelope-open-text"></i>
-                        <span>Inbox Message</span>
+                <li class="nav-menu-item dropdown {% if '/admin/inbox' in request.path or '/admin/sms' in request.path %}active{% endif %}">
+                    <a class="nav-menu-link dropdown-toggle d-flex align-items-center justify-content-between" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        <div class="d-flex align-items-center gap-2">
+                            <i class="fa-solid fa-comments"></i>
+                            <span>Messages &amp; SMS</span>
+                        </div>
                         {% if get_unread_messages_count() > 0 %}
-                            <span class="badge bg-danger ms-auto">{{ get_unread_messages_count() }}</span>
+                            <span class="badge bg-danger">{{ get_unread_messages_count() }}</span>
                         {% endif %}
                     </a>
+                    <ul class="dropdown-menu border-0 shadow-lg p-2 rounded-3" style="background: #1e293b; min-width: 210px;">
+                        <li>
+                            <a class="dropdown-item text-white-50 rounded-2 py-2 px-3 d-flex align-items-center justify-content-between {% if '/admin/inbox' in request.path %}active bg-primary text-white{% endif %}" href="{{ url_for('admin.inbox') }}">
+                                <div class="d-flex align-items-center gap-2">
+                                    <i class="fa-solid fa-envelope-open-text text-primary"></i>
+                                    <span>Inbox Messages</span>
+                                </div>
+                                {% if get_unread_messages_count() > 0 %}
+                                    <span class="badge bg-danger">{{ get_unread_messages_count() }}</span>
+                                {% endif %}
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item text-white-50 rounded-2 py-2 px-3 d-flex align-items-center gap-2 {% if '/admin/sms' in request.path %}active bg-primary text-white{% endif %}" href="{{ url_for('admin.sms_broadcast') }}">
+                                <i class="fa-solid fa-comment-sms text-primary"></i>
+                                <span>SMS Broadcast</span>
+                            </a>
+                        </li>
+                    </ul>
                 </li>
             {% endif %}
             
             {% if current_user.can('manage_settings') %}
-                <li class="nav-menu-item {% if '/admin/appearance' in request.path %}active{% endif %}">
-                    <a href="{{ url_for('admin.appearance') }}" class="nav-menu-link">
-                        <i class="fa-solid fa-wand-magic-sparkles"></i>
-                        <span>Appearance Layout</span>
-                    </a>
-                </li>
-                <li class="nav-menu-item {% if '/admin/media' in request.path %}active{% endif %}">
-                    <a href="{{ url_for('admin.list_media') }}" class="nav-menu-link">
-                        <i class="fa-solid fa-photo-film"></i>
-                        <span>Media Manager</span>
-                    </a>
-                </li>
-                <li class="nav-menu-item {% if '/admin/settings' in request.path %}active{% endif %}">
+                <li class="nav-menu-item {% if '/admin/appearance' in request.path or '/admin/settings' in request.path %}active{% endif %}">
                     <a href="{{ url_for('admin.settings') }}" class="nav-menu-link">
                         <i class="fa-solid fa-sliders"></i>
-                        <span>System Settings</span>
+                        <span>Appearance &amp; Settings</span>
                     </a>
                 </li>
             {% endif %}
             
             {% if current_user.is_super_administrator %}
-                <li class="nav-menu-item {% if '/developer' in request.path %}active{% endif %}">
-                    <a href="{{ url_for('developer.dashboard') }}" class="nav-menu-link">
-                        <i class="fa-solid fa-code"></i>
-                        <span>Developer Console</span>
-                    </a>
-                </li>
                 <li class="nav-menu-item {% if '/admin/backups' in request.path %}active{% endif %}">
                     <a href="{{ url_for('admin.backups') }}" class="nav-menu-link">
                         <i class="fa-solid fa-database"></i>
                         <span>Database Backups</span>
-                    </a>
-                </li>
-            {% endif %}
-            {% if current_user.can('manage_users') %}
-                <li class="nav-menu-item {% if '/admin/users' in request.path %}active{% endif %}">
-                    <a href="{{ url_for('admin.list_users') }}" class="nav-menu-link">
-                        <i class="fa-solid fa-users-gear"></i>
-                        <span>User Controls</span>
                     </a>
                 </li>
             {% endif %}

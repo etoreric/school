@@ -69,9 +69,6 @@ def create_app(config_name='default'):
     from app.admin import admin as admin_blueprint
     app.register_blueprint(admin_blueprint, url_prefix='/admin')
 
-    from app.developer import developer as developer_blueprint
-    app.register_blueprint(developer_blueprint, url_prefix='/developer')
-
     @app.errorhandler(403)
     @app.errorhandler(404)
     @app.errorhandler(500)

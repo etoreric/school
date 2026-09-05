@@ -142,3 +142,34 @@ class Media(db.Model):
     def __repr__(self):
         return f'<Media {self.media_path}>'
 
+
+# ─── Parent Contacts & SMS Broadcast ────────────────────────────────────────
+
+class ParentContact(db.Model):
+    """A single parent/guardian contact imported from an Excel file."""
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(150), nullable=False, default='Parent')
+    phone = db.Column(db.String(30), nullable=False)
+    grade = db.Column(db.String(50), default='')
+    class_name = db.Column(db.String(50), default='')
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    def __repr__(self):
+        return f'<ParentContact {self.name} {self.phone}>'
+
+
+class SMSBroadcast(db.Model):
+    """Log of every bulk SMS broadcast sent to parents."""
+    id = db.Column(db.Integer, primary_key=True)
+    message = db.Column(db.Text, nullable=False)
+    total_recipients = db.Column(db.Integer, default=0)
+    sent_count = db.Column(db.Integer, default=0)
+    failed_count = db.Column(db.Integer, default=0)
+    sent_by = db.Column(db.String(64))
+    error_details = db.Column(db.Text, nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    def __repr__(self):
+        return f'<SMSBroadcast sent={self.sent_count} failed={self.failed_count}>'
+
+

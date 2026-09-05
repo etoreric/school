@@ -3,9 +3,24 @@
 
 {% block admin_content %}
 <div class="mb-4">
-    <h4 class="fw-bold m-0 text-dark"><i class="fa-solid fa-sliders me-2 text-primary"></i>Website settings</h4>
+    <h4 class="fw-bold m-0 text-dark"><i class="fa-solid fa-sliders me-2 text-primary"></i>Appearance &amp; Settings</h4>
 </div>
 
+<ul class="nav nav-tabs border-bottom mb-4" id="settingsTab" role="tablist">
+    <li class="nav-item" role="presentation">
+        <button class="nav-link active fw-bold py-3" id="system-settings-tab" data-bs-toggle="tab" data-bs-target="#system-settings" type="button" role="tab" aria-controls="system-settings" aria-selected="true">
+            <i class="fa-solid fa-sliders me-1"></i>System Settings
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link fw-bold py-3" id="appearance-tab" data-bs-toggle="tab" data-bs-target="#appearance" type="button" role="tab" aria-controls="appearance" aria-selected="false">
+            <i class="fa-solid fa-wand-magic-sparkles me-1"></i>Appearance Layout
+        </button>
+    </li>
+</ul>
+
+<div class="tab-content" id="settingsTabContent">
+<div class="tab-pane fade show active" id="system-settings" role="tabpanel" aria-labelledby="system-settings-tab">
 <form action="" method="POST" enctype="multipart/form-data">
     {{ form.hidden_tag() }}
     {% if form.errors %}
@@ -202,4 +217,10 @@
         </div>
     </div>
 </form>
+</div>
+
+<div class="tab-pane fade" id="appearance" role="tabpanel" aria-labelledby="appearance-tab">
+    {% include 'admin/appearance.html' %}
+</div>
+</div>
 {% endblock %}

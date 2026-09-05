@@ -46,7 +46,7 @@
                 
                 <!-- Custom CMS Navbar Pages -->
                 {% for p in get_navbar_pages() %}
-                    {% if p.slug not in ['about', 'history', 'mission', 'faq'] %}
+                    {% if p.slug not in ['about', 'history', 'mission', 'faq', 'contact'] %}
                         <li class="nav-item">
                             <a class="nav-link {% if request.path == '/page/'~p.slug %}active{% endif %}" href="{{ url_for('main.page', slug=p.slug) }}">{{ p.title }}</a>
                         </li>
